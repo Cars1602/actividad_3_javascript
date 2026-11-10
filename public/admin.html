@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Administración · NexusPlay</title>
+    <link rel="stylesheet" href="/estilos.css">
+    <script defer src="/jquery.min.js"></script>
+    <script defer src="/admin.js"></script>
+</head>
+
+<body>
+    <header>
+        <div><span class="marca">NEXUS<span class="marca-acento">PLAY</span></span>
+            <p>Administración de productos y ventas</p>
+        </div><a href="/" class="secundario enlace">Ir a la tienda y cobrar</a>
+    </header>
+    <main>
+        <section class="intro">
+            <p class="eyebrow">PANEL DE ADMINISTRACIÓN</p>
+            <h1>Tu inventario.<br><span class="hero-acento">Tu próxima venta.</span></h1>
+            <p>Administra videojuegos, géneros, portadas y pagos desde un solo lugar.</p>
+        </section>
+        <p id="mensaje" role="status"></p>
+        <section class="config-admin">
+            <div>
+                <h2>Crear categoría</h2>
+                <form id="form-categoria"><label>Nombre de la categoría<input id="nueva-categoria" maxlength="60"
+                            placeholder="Ej. Aventura, deportes o estrategia" required></label><button>Crear categoría</button></form>
+                <p id="lista-categorias" class="ayuda"></p>
+            </div>
+            <div>
+                <h2>Configurar QR del negocio</h2>
+                <form id="form-qr"><label>Imagen QR bancaria<input id="qr-admin" type="file"
+                            accept="image/png,image/jpeg,image/webp" required></label><img id="qr-previa"
+                        class="vista-previa" alt="QR bancario configurado" hidden>
+                    <p class="ayuda">Este QR se mostrará automáticamente a los compradores. Máximo 1.5 MB.</p><button
+                        id="guardar-qr">Guardar QR</button>
+                </form>
+            </div>
+        </section>
+        <div class="layout admin-layout">
+            <section>
+                <h2>Agregar videojuego</h2>
+                <form id="registro-admin"><label>Título del videojuego<input id="nombre" maxlength="100"
+                            placeholder="Ej. Minecraft" required></label>
+                    <div class="dos"><label>Categoría<select id="categoria" required>
+                                <option value="">Selecciona una categoría</option>
+                            </select></label><label>Precio Bs<input id="precio" type="number" min="0.01"
+                                max="99999999.99" step="0.01" required></label></div><label>Descripción<textarea
+                            id="descripcion" maxlength="500" rows="3"
+                            placeholder="Plataforma, edición, formato y descripción del juego"></textarea></label><label>Cantidad<input
+                            id="stock" type="number" min="0" max="1000000" step="1" required></label><label>Imagen del
+                        producto<input id="imagen" type="file" accept="image/png,image/jpeg,image/webp"
+                            required></label>
+                    <p class="ayuda">JPG, PNG o WebP. Máximo 1.5 MB. La foto se guarda con el producto en PostgreSQL.
+                    </p><img id="vista-previa" class="vista-previa" alt="Vista previa del producto" hidden>
+                    <div class="acciones"><button id="guardar">Guardar videojuego</button><button type="reset"
+                            class="secundario">Limpiar</button></div>
+                    <p class="ayuda">Enter guarda el formulario. Escape lo limpia.</p>
+                </form>
+            </section>
+            <section>
+                <div class="titulo">
+                    <h2>Videojuegos registrados</h2><button id="recargar" class="secundario">Actualizar</button>
+                </div>
+                <div id="productos-admin"></div>
+            </section>
+        </div>
+        <section class="historial">
+            <div class="titulo">
+                <h2>Ventas y pagos</h2><button id="actualizar-ventas" class="secundario">Actualizar</button>
+            </div>
+            <p>Comprueba el ingreso en el banco antes de confirmar un pago QR.</p>
+            <div id="ventas-admin"></div>
+        </section>
+        <footer>NexusPlay · Administración de videojuegos</footer>
+    </main>
+</body>
+
+</html>

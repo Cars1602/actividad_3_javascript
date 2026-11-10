@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>NexusPlay · Carrito de compras</title>
+    <link rel="stylesheet" href="estilos.css">
+    <script defer src="/jquery.min.js"></script>
+    <script defer src="app.js"></script>
+</head>
+
+<body>
+    <header>
+        <div><span class="marca">NEXUS<span class="marca-acento">PLAY</span></span>
+            <p>VIDEOJUEGOS / CATÁLOGO / CHECKOUT</p>
+        </div><a class="secundario enlace" href="/admin.html">Panel admin</a>
+    </header>
+    <main>
+        <section class="intro">
+            <p class="eyebrow">TU PRÓXIMA PARTIDA EMPIEZA AQUÍ</p>
+            <h1>Elige tu juego.<br><span class="hero-acento">Entra en otra historia.</span></h1>
+            <p>Explora el catálogo, arma tu colección y paga en efectivo o con QR.</p>
+        </section>
+        <p id="mensaje" role="status" aria-live="polite"></p>
+        <div class="layout">
+            <section>
+                <div class="titulo">
+                    <h2>Explora los videojuegos</h2><span class="etiqueta">ELIGE TU SIGUIENTE AVENTURA</span>
+                </div>
+
+                <label class="buscar">Buscar videojuego<input id="buscar" type="search"
+                        placeholder="Busca el título de un videojuego…"></label>
+                <div id="catalogo"></div>
+                <p id="sin-productos">Cargando videojuegos…</p>
+            </section>
+            <aside>
+                <div class="titulo">
+                    <h2>Tu carrito</h2><span id="contador">0 unidades</span>
+                </div>
+                <div id="carrito"></div>
+                <p id="vacio">Tu carrito está vacío. Elige un videojuego para comenzar.</p>
+                <div class="total"><span>Total</span><strong id="total">Bs 0.00</strong></div><button id="vaciar"
+                    class="secundario">Vaciar carrito</button>
+                <form id="pago">
+                    <h3>Forma de pago</h3>
+                    <div class="opciones"><label><input type="radio" name="metodo" value="efectivo" checked>
+                            Efectivo</label><label><input type="radio" name="metodo" value="qr"> QR estático</label>
+                    </div>
+                    <div id="efectivo"><label>Efectivo recibido Bs<input id="recibido" type="number" min="0" step="0.01"
+                                placeholder="0.00"></label>
+                        <p>Cambio: <strong id="cambio">Bs 0.00</strong></p>
+                    </div>
+                    <div id="qr" hidden>
+                        <p>Escanea el QR del negocio y verifica el importe antes de pagar.</p><img id="imagen-qr"
+                            alt="QR bancario del negocio" hidden>
+                        <p id="estado-qr" role="status"></p>
+                        <p class="ayuda">QR estático del negocio. Revisa el importe en tu banco y completa el pago. La
+                            administración verifica el ingreso.</p>
+                    </div><button id="cobrar" class="principal">Registrar cobro</button>
+                </form>
+            </aside>
+        </div>
+
+        <footer>NexusPlay · Videojuegos y nuevas aventuras</footer>
+    </main>
+</body>
+
+</html>

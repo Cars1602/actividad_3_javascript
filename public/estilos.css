@@ -510,3 +510,8 @@ header{background:#10131deF;border-bottom:1px solid var(--linea);padding-top:24p
 @media(max-width:760px){.filtros-ventas{grid-template-columns:repeat(2,minmax(0,1fr))}.resumen-ventas{grid-template-columns:1fr}#ventas-admin .venta{flex-direction:column}.estado-venta{margin:8px 0 0 10px}.paginacion-ventas{gap:10px;font-size:13px}}
 
 #seguimiento.pago-confirmado{padding:20px;border:1px solid var(--acento);border-radius:10px;background:#253420}
+
+.aviso-pago{padding:24px;margin:0 0 28px;border:1px solid #ad8950;border-radius:12px;background:#322b1b;color:#ffdb8f}
+.aviso-pago h2{font-size:26px;margin:0 0 10px}.aviso-pago p{margin:0;line-height:1.6}
+.aviso-pago.pago-completo{border-color:var(--acento);background:#253420;color:#d5f6b9}
+#seguimiento.pago-confirmado{padding:20px;border:1px solid var(--acento);border-radius:10px;background:#253420}

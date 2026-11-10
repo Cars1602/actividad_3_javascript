@@ -42,6 +42,27 @@ async function sincronizarSheets(){
 }
 app.post('/api/admin/yape/sincronizar',async(req,res)=>{try{await sincronizarSheets();res.json({configurado:!!(process.env.GOOGLE_SHEETS_URL&&process.env.GOOGLE_SHEETS_TOKEN),mensaje:'Sincronización revisada. Actualiza los avisos.'});}catch{res.status(503).json({error:'No se pudo sincronizar con Google. El aviso permanece guardado en Neon.'});}});
 setInterval(()=>sincronizarSheets().catch(()=>console.error('Google Sheets pendiente de sincronizar.')),60000).unref();
+// Reintenta avisos ya recibidos, sin depender de una acción del administrador.
+let conciliando=false;
+async function revisarPagosPendientes(){
+ if(conciliando)return;
+ conciliando=true;
+ try{
+  const avisos=(await pool.query(`SELECT n.evento_id FROM tienda.notificaciones_yape n
+   WHERE n.estado='por_revisar' AND n.pedido_id IS NULL
+   AND n.fecha_recepcion>=now()-interval '24 hours'
+   AND EXISTS(SELECT 1 FROM tienda.ventas v WHERE v.estado='pendiente'
+    AND v.metodo IN ('qr','mixto') AND NOT v.qr_verificado AND v.nombre_pagador_clave<>''
+    AND v.creado_en<=n.fecha_recepcion AND v.creado_en>=n.fecha_recepcion-interval '30 minutes')
+   ORDER BY n.fecha_recepcion LIMIT 50`)).rows;
+  for(const aviso of avisos){
+   const c=await pool.connect();
+   try{await c.query('BEGIN');await reconciliarAviso(c,aviso.evento_id);await c.query('COMMIT');}
+   catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
+  }
+ }finally{conciliando=false;}
+}
+setInterval(()=>revisarPagosPendientes().catch(()=>console.error('Conciliación pendiente de reintento.')),8000).unref();
 // Contrato compatible con el JSON que ya envía el lector Android.
 app.post('/api/yape/notificaciones',async(req,res,next)=>{
  const token=process.env.YAPE_API_TOKEN;
@@ -54,7 +75,7 @@ app.post('/api/yape/notificaciones',async(req,res,next)=>{
  c=await pool.connect();await c.query('BEGIN');
  await c.query('SELECT pg_advisory_xact_lock(853002)');
  const r=await c.query('INSERT INTO tienda.notificaciones_yape(evento_id,fecha_recepcion,aplicacion,texto_original) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING RETURNING evento_id',[EventoId,FechaRecepcion,Aplicacion,TextoOriginal]);
- if(r.rowCount)await reconciliarAviso(c,EventoId);
+ await reconciliarAviso(c,EventoId);
  const aviso=(await c.query('SELECT estado,pedido_id FROM tienda.notificaciones_yape WHERE evento_id=$1',[EventoId])).rows[0];
  await c.query('COMMIT');
  sincronizarSheets().catch(()=>console.error('Google Sheets pendiente de sincronizar.'));

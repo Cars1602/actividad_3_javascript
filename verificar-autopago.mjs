@@ -24,7 +24,8 @@ async function aviso({nombre='PRUEBA '+sufijo,fecha=new Date(),aplicacion=app,ra
 async function estado(id){return(await c.query('SELECT estado,qr_verificado FROM tienda.ventas WHERE id=$1',[id])).rows[0];}
 try{
  await c.query('BEGIN');
- await caso(async()=>{const v=await venta(),a=await aviso();assert.equal((await reconciliarAviso(c,a)).pedido_id,v);assert.equal((await estado(v)).estado,'pagado');assert.equal(await reconciliarAviso(c,a),null);const otro=await venta(),dup=await aviso();assert.equal(await reconciliarAviso(c,dup),null);assert.equal((await estado(otro)).estado,'pendiente');});
+ await caso(async()=>{const fecha=new Date();const v=await venta(),a=await aviso({fecha});assert.equal((await reconciliarAviso(c,a)).pedido_id,v);assert.equal((await estado(v)).estado,'pagado');assert.equal(await reconciliarAviso(c,a),null);const otro=await venta(),dup=await aviso({fecha});assert.equal(await reconciliarAviso(c,dup),null);assert.equal((await estado(otro)).estado,'pendiente');
+ const siguiente=await aviso({fecha:new Date(fecha.getTime()+1000)});assert.equal((await reconciliarAviso(c,siguiente)).pedido_id,otro);assert.equal((await estado(otro)).estado,'pagado');});
  await caso(async()=>{const v=await venta();await venta();assert.equal(await reconciliarAviso(c,await aviso()),null);assert.equal((await estado(v)).estado,'pendiente');});
  await caso(async()=>{const v=await venta();assert.equal(await reconciliarAviso(c,await aviso({nombre:'OTRO PAGADOR'})),null);assert.equal((await estado(v)).estado,'pendiente');});
  await caso(async()=>{await venta();assert.equal(await reconciliarAviso(c,await aviso({raw:texto('PRUEBA '+sufijo).replace('10,00','11,00')})),null);});

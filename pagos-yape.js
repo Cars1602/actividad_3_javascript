@@ -13,8 +13,7 @@ export function leerAviso(texto,aplicacion) {
     if(!m)return null;
     const nombre=normalizarNombre(m[1]),centavos=Number(m[2].replace(/[.,]/,''));
     if(nombre.split(' ').length<2||!Number.isSafeInteger(centavos)||centavos<=0)return null;
-    // Un texto idéntico nunca puede pagar dos pedidos: sin referencia bancaria,
-    // los siguientes avisos idénticos se revisan manualmente.
+    // Base del identificador: se combina con la fecha original del aviso al asociarlo.
     const huella=createHash('sha256').update(aplicacion+'|'+texto.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim()).digest('hex');
     return {nombre,centavos,huella};
 }
@@ -28,7 +27,10 @@ export async function reconciliarAviso(c,id) {
     if(!pago)return null;
     const fecha=new Date(aviso.fecha_recepcion).getTime();
     if(fecha>Date.now()+60000||fecha<Date.now()-24*60*60*1000)return null;
-    if((await c.query('SELECT 1 FROM tienda.notificaciones_yape WHERE huella_pago=$1 AND pedido_id IS NOT NULL',[pago.huella])).rowCount)return null;
+    // Dos transferencias del mismo nombre y monto pueden tener el mismo texto.
+    // Un aviso con igual contenido y fecha original no se puede reutilizar.
+    const huella=createHash('sha256').update(pago.huella+'|'+new Date(fecha).toISOString()).digest('hex');
+    if((await c.query('SELECT 1 FROM tienda.notificaciones_yape WHERE huella_pago=$1 AND pedido_id IS NOT NULL',[huella])).rowCount)return null;
     const candidatos=(await c.query(`SELECT id,metodo FROM tienda.ventas
         WHERE estado='pendiente' AND metodo IN ('qr','mixto') AND NOT qr_verificado
         AND nombre_pagador_clave=$1 AND monto_qr=$2::numeric/100
@@ -37,7 +39,7 @@ export async function reconciliarAviso(c,id) {
     if(candidatos.length!==1)return null;
     const venta=candidatos[0];
     await c.query(`UPDATE tienda.notificaciones_yape SET pedido_id=$1,huella_pago=$2,
-        estado='qr_detectado',sheets_sincronizado_en=NULL WHERE evento_id=$3`,[venta.id,pago.huella,id]);
+        estado='qr_detectado',sheets_sincronizado_en=NULL WHERE evento_id=$3`,[venta.id,huella,id]);
     await c.query(`UPDATE tienda.ventas SET qr_verificado=true,estado=CASE WHEN metodo='qr' THEN 'pagado' ELSE estado END WHERE id=$1`,[venta.id]);
     return {pedido_id:venta.id,estado:venta.metodo==='qr'?'pagado':'pendiente'};
 }

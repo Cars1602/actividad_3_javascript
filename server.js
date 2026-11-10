@@ -1,3 +1,4 @@
+import { normalizarNombre, reconciliarAviso } from './pagos-yape.js';
 import { timingSafeEqual, createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
@@ -49,7 +50,16 @@ app.post('/api/yape/notificaciones',async(req,res,next)=>{
  if(!auth.startsWith('Bearer ')||!igual(auth.slice(7),token))return res.status(401).json({error:'Token del lector inválido.'});
  const {EventoId,FechaRecepcion,Aplicacion,TextoOriginal}=req.body||{};
  if(typeof EventoId!=='string'||!/^[-a-zA-Z0-9_:]{16,128}$/.test(EventoId)||typeof Aplicacion!=='string'||Aplicacion.length>200||!Aplicacion||typeof TextoOriginal!=='string'||!TextoOriginal.trim()||TextoOriginal.length>8000||typeof FechaRecepcion!=='string'||!Number.isFinite(Date.parse(FechaRecepcion)))return res.status(400).json({error:'Notificación inválida.'});
- try{const r=await pool.query('INSERT INTO tienda.notificaciones_yape(evento_id,fecha_recepcion,aplicacion,texto_original) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING RETURNING evento_id',[EventoId,FechaRecepcion,Aplicacion,TextoOriginal]);sincronizarSheets().catch(()=>console.error('Google Sheets pendiente de sincronizar.'));res.status(r.rowCount?201:200).json({registrado:true,duplicado:!r.rowCount,estado:'por_revisar'});}catch(e){next(e);}
+ let c;try{
+ c=await pool.connect();await c.query('BEGIN');
+ await c.query('SELECT pg_advisory_xact_lock(853002)');
+ const r=await c.query('INSERT INTO tienda.notificaciones_yape(evento_id,fecha_recepcion,aplicacion,texto_original) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING RETURNING evento_id',[EventoId,FechaRecepcion,Aplicacion,TextoOriginal]);
+ if(r.rowCount)await reconciliarAviso(c,EventoId);
+ const aviso=(await c.query('SELECT estado,pedido_id FROM tienda.notificaciones_yape WHERE evento_id=$1',[EventoId])).rows[0];
+ await c.query('COMMIT');
+ sincronizarSheets().catch(()=>console.error('Google Sheets pendiente de sincronizar.'));
+ res.status(r.rowCount?201:200).json({registrado:true,duplicado:!r.rowCount,...aviso});
+ }catch(e){if(c)await c.query('ROLLBACK');next(e);}finally{c?.release();}
 });
 app.get('/api/admin/yape',async(req,res,next)=>{try{res.json((await pool.query('SELECT * FROM tienda.notificaciones_yape ORDER BY registrado_en DESC LIMIT 100')).rows);}catch(e){next(e);}});
 app.get('/api/admin/yape/excel.csv',async(req,res,next)=>{
@@ -91,7 +101,7 @@ app.post('/api/productos', async (req, res, next) => {
 // Consulta de estado con clave aleatoria, sin exponer ventas de otros compradores.
 app.get('/api/pedidos/:token',async(req,res,next)=>{
  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(req.params.token))return res.status(400).json({error:'Clave de pedido inválida.'});
- try{const r=await pool.query('SELECT id,total,metodo,estado,monto_efectivo,monto_qr FROM tienda.ventas WHERE consulta_token=$1',[req.params.token]);if(!r.rowCount)return res.status(404).json({error:'Pedido no encontrado.'});res.json({...r.rows[0],verificacion_excel:'reemplazada_por_neon'});}catch(e){next(e);}
+ try{const r=await pool.query('SELECT id,total,metodo,estado,monto_efectivo,monto_qr,qr_verificado FROM tienda.ventas WHERE consulta_token=$1',[req.params.token]);if(!r.rowCount)return res.status(404).json({error:'Pedido no encontrado.'});res.json({...r.rows[0],verificacion_excel:'reemplazada_por_neon'});}catch(e){next(e);}
 });
 app.get('/api/admin/ventas/historial', async (req,res,next) => {
  const {estado='',metodo='',desde='',hasta=''}=req.query;
@@ -110,14 +120,15 @@ app.get('/api/admin/ventas/historial', async (req,res,next) => {
   c=await pool.connect();await c.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
   const resumen=(await c.query(`SELECT count(*)::integer AS cantidad,count(*) FILTER(WHERE estado='pagado')::integer AS pagadas,count(*) FILTER(WHERE estado='pendiente')::integer AS pendientes,COALESCE(sum(total) FILTER(WHERE estado='pagado'),0) AS total_pagado,COALESCE(sum(total) FILTER(WHERE estado='pendiente'),0) AS total_pendiente FROM tienda.ventas${where}`,valores)).rows[0];
   const paginas=Math.max(1,Math.ceil(resumen.cantidad/20)),actual=Math.min(pagina,paginas);
-  const ventas=(await c.query(`SELECT id,metodo,total,recibido,estado,detalle,creado_en,monto_efectivo,monto_qr FROM tienda.ventas${where} ORDER BY creado_en DESC,id DESC LIMIT 20 OFFSET $${valores.length+1}`,[...valores,(actual-1)*20])).rows;
+  const ventas=(await c.query(`SELECT id,metodo,total,recibido,estado,detalle,creado_en,monto_efectivo,monto_qr,nombre_pagador,qr_verificado FROM tienda.ventas${where} ORDER BY creado_en DESC,id DESC LIMIT 20 OFFSET $${valores.length+1}`,[...valores,(actual-1)*20])).rows;
   await c.query('COMMIT');res.json({ventas,resumen,pagina:actual,paginas});
  }catch(e){if(c)await c.query('ROLLBACK');next(e);}finally{c?.release();}
 });
 app.get('/api/ventas', async (req, res, next) => { try { res.json((await pool.query('SELECT * FROM tienda.ventas ORDER BY id DESC LIMIT 30')).rows); } catch (e) { next(e); } });
 // La transacción bloquea existencias y calcula el total con precios del servidor.
 app.post('/api/ventas', async (req, res, next) => {
-    const { items, metodo, recibido } = req.body;
+    const { items, metodo, recibido, nombre_pagador = '' } = req.body;
+    if(typeof nombre_pagador!=='string'||nombre_pagador.length>150||(nombre_pagador.trim()&&normalizarNombre(nombre_pagador).split(' ').length<2))return res.status(400).json({error:'Escribe el nombre completo del titular que hará el pago QR.'});
     if (!['efectivo', 'qr', 'mixto'].includes(metodo) || !Array.isArray(items) || !items.length || items.length > 100) return res.status(400).json({ error: 'Carrito o método inválido.' });
     if (metodo !== 'efectivo' && !(await pool.query("SELECT 1 FROM tienda.configuracion WHERE id=1 AND qr_imagen<>''")).rowCount) return res.status(400).json({ error: 'El negocio aún no configuró su QR.' });
     const ids = new Set();
@@ -138,7 +149,8 @@ app.post('/api/ventas', async (req, res, next) => {
         const efectivo=metodo==='efectivo'?total:metodo==='mixto'?Math.round(recibido*100)/100:0;
         const saldoQr=(centavos-Math.round(efectivo*100))/100;
         for (const i of items) await c.query('UPDATE tienda.productos SET stock=stock-$1 WHERE id=$2', [i.cantidad, i.id]);
-        const venta = (await c.query('INSERT INTO tienda.ventas(metodo,total,recibido,estado,detalle,monto_efectivo,monto_qr) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *', [metodo, total, metodo !== 'qr' ? recibido : null, metodo === 'efectivo' ? 'pagado' : 'pendiente', JSON.stringify(detalle),efectivo,saldoQr])).rows[0];
+        await c.query('SELECT pg_advisory_xact_lock(853002)');
+        const venta = (await c.query('INSERT INTO tienda.ventas(metodo,total,recibido,estado,detalle,monto_efectivo,monto_qr,nombre_pagador,nombre_pagador_clave) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *', [metodo, total, metodo !== 'qr' ? recibido : null, metodo === 'efectivo' ? 'pagado' : 'pendiente', JSON.stringify(detalle),efectivo,saldoQr,metodo==='efectivo'?'':nombre_pagador.trim(),metodo==='efectivo'?'':normalizarNombre(nombre_pagador)])).rows[0];
         await c.query('COMMIT'); res.status(201).json(venta);
     } catch (e) { if (c) await c.query('ROLLBACK'); if (e instanceof Error && ['Existencias', 'Total', 'El efectivo'].some(x => e.message.startsWith(x))) res.status(400).json({ error: e.message }); else next(e); } finally { c?.release(); }
 });

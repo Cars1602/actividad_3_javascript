@@ -26,25 +26,33 @@ $(function () {
     $('[name=metodo]').on('change', function () {
         const mixto=this.value==='mixto', qr=this.value!=='efectivo';
         $('#efectivo').prop('hidden',this.value==='qr');$('#qr').prop('hidden',!qr);
-        $('#recibido').prop('required',this.value!=='qr');$('#resumen-saldo').prop('hidden',!mixto);
+        $('#nombre-pagador').prop('required',qr);$('#recibido').prop('required',this.value!=='qr');$('#resumen-saldo').prop('hidden',!mixto);
         $('#resumen-cambio').prop('hidden',mixto);$('#cobrar').text('Confirmar pedido');
         cambio();if(qr)cargarQR();
     });
     $('#recibido').prop('required', true).on('input', cambio);
     async function cargarQR() { try { const c = await api('configuracion'); if (c.qr_imagen) { $('#imagen-qr').attr('src', c.qr_imagen).prop('hidden', false); $('#estado-qr').text(''); } else { $('#imagen-qr').removeAttr('src').prop('hidden', true); $('#estado-qr').text('El negocio todavía no configuró su QR.'); } } catch (e) { $('#imagen-qr').removeAttr('src').prop('hidden', true); fallo(e); } }
 
+    let temporizadorPago,consultandoPago=false;
+    async function consultarPago(manual=false){
+        if(!pedidoToken||consultandoPago)return;
+        consultandoPago=true;clearTimeout(temporizadorPago);temporizadorPago=null;
+        const clave=pedidoToken;
+        try{const v=await api('pedidos/'+clave);if(pedidoToken===clave)mostrarPedido(v);}
+        catch(e){if(manual)fallo(e);temporizadorPago=setTimeout(()=>consultarPago(),15000);}
+        finally{consultandoPago=false;}
+    }
     function mostrarPedido(v){
         $('#seguimiento').prop('hidden',false);
         $('#numero-pedido').text('Pedido #'+v.id);
         $('#importes-pedido').text('Total: '+dinero(v.total)+' · Efectivo: '+dinero(v.monto_efectivo)+' · QR: '+dinero(v.monto_qr));
-        $('#estado-pedido').text(v.estado==='pagado'?'Pago confirmado en el sistema.':'Pedido registrado. Pago pendiente de verificación. La administración verificará el aviso de Yape recibido en el sistema.');
+        $('#estado-pedido').text(v.estado==='pagado'?'¡Pago confirmado! Tu pedido está pagado.':v.qr_verificado?'QR recibido. Falta que el administrador confirme la entrega del efectivo.':'Esperando el aviso de Yape que coincida con tu pedido. Si ya pagaste, no vuelvas a transferir.');
+        $('#seguimiento').toggleClass('pago-confirmado',v.estado==='pagado');
+        clearTimeout(temporizadorPago);
+        if(v.estado!=='pagado')temporizadorPago=setTimeout(()=>consultarPago(),8000);
         $('#verificar-pago').prop('disabled',v.estado==='pagado');
     }
-    $('#verificar-pago').on('click',async function(){
-        if(!pedidoToken)return;
-        $(this).prop('disabled',true);
-        try{mostrarPedido(await api('pedidos/'+pedidoToken));}catch(e){fallo(e);$(this).prop('disabled',false);}
-    });
+    $('#verificar-pago').on('click',()=>consultarPago(true));
     $('#pago').on('submit',async function(e){
         e.preventDefault();if(ocupado||!carrito.length)return;
         const metodo=$('[name=metodo]:checked').val();
@@ -52,7 +60,7 @@ $(function () {
         if(!confirm('¿Confirmar este pedido por '+dinero(total())+'?'))return;
         ocupado=true;$('#pago input,#carrito input,#carrito button,#catalogo button').prop('disabled',true);dibujar();$('#carrito input,#carrito button').prop('disabled',true);
         try{
-            const v=await api('ventas','POST',{items:carrito.map(i=>({id:i.id,cantidad:i.cantidad})),metodo,recibido:Number($('#recibido').val())});
+            const v=await api('ventas','POST',{items:carrito.map(i=>({id:i.id,cantidad:i.cantidad})),metodo,recibido:Number($('#recibido').val()),nombre_pagador:$('#nombre-pagador').val().trim()});
             pedidoToken=v.consulta_token;try{localStorage.setItem('nexus-pedido',pedidoToken);}catch{}
             mostrarPedido(v);carrito=[];$('#recibido').val('');mensaje('Pedido #'+v.id+' registrado. Consulta su estado en «Verificar pago».');await cargar();
         }catch(e){fallo(e);}finally{ocupado=false;$('#pago input,#catalogo button').prop('disabled',false);catalogo();dibujar();}

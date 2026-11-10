@@ -34,6 +34,8 @@ $(function () {
                 $('<p>').text(nombresPago[v.metodo]+' · '+new Date(v.creado_en).toLocaleString('es-BO',{timeZone:'America/La_Paz'})),
                 $('<p>').text(v.detalle.map(i=>i.nombre+' × '+i.cantidad).join(', ')),
                 $('<p>').text('Efectivo: '+dinero(v.monto_efectivo||0)+' · QR: '+dinero(v.monto_qr||0)));
+            if(v.nombre_pagador)d.append($('<p>').text('Titular QR: '+v.nombre_pagador));
+            if(v.qr_verificado&&v.estado==='pendiente')d.append($('<p>').text('Aviso QR recibido. Falta confirmar el efectivo.'));
             fila.append(d);if(v.estado==='pendiente')fila.append($('<button class="confirmar">').attr('data-id',v.id).text(v.metodo==='mixto'?'Confirmar efectivo y QR':'Confirmar pago QR'));lista.append(fila);
         });
     }

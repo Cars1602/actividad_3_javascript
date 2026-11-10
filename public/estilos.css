@@ -508,3 +508,5 @@ header{background:#10131deF;border-bottom:1px solid var(--linea);padding-top:24p
 .estado-venta{display:inline-block;margin-left:12px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700}.estado-venta.pagada{background:#253420;color:#d5f6b9}.estado-venta.pendiente{background:#3d3019;color:#ffdb8f}
 .paginacion-ventas{display:flex;justify-content:center;align-items:center;gap:18px;margin-top:24px}#ventas-admin .venta{align-items:flex-start}#ventas-admin .venta>div{min-width:0}#ventas-admin .venta p{overflow-wrap:anywhere}
 @media(max-width:760px){.filtros-ventas{grid-template-columns:repeat(2,minmax(0,1fr))}.resumen-ventas{grid-template-columns:1fr}#ventas-admin .venta{flex-direction:column}.estado-venta{margin:8px 0 0 10px}.paginacion-ventas{gap:10px;font-size:13px}}
+
+#seguimiento.pago-confirmado{padding:20px;border:1px solid var(--acento);border-radius:10px;background:#253420}

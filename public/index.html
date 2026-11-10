@@ -52,11 +52,12 @@
                         <p id="resumen-saldo" hidden>Saldo a pagar por QR: <strong id="saldo-qr">Bs 0.00</strong></p><p id="resumen-cambio">Cambio: <strong id="cambio">Bs 0.00</strong></p>
                     </div>
                     <div id="qr" hidden>
-                        <p>Escanea el QR del negocio y verifica el importe antes de pagar.</p><img id="imagen-qr"
+                        <label>Nombre completo del titular que pagará por QR<input id="nombre-pagador" maxlength="150" autocomplete="name" placeholder="Como aparece en Yape"></label>
+                        <p>Primero confirma el pedido. Después paga el importe exacto con el QR.</p><img id="imagen-qr"
                             alt="QR bancario del negocio" hidden>
                         <p id="estado-qr" role="status"></p>
                         <p class="ayuda">QR estático del negocio. Revisa el importe en tu banco y completa el pago. La
-                            administración verifica el ingreso.</p>
+                            página confirmará cuando llegue un aviso que coincida con tu nombre, importe y pedido. Si no coincide, lo revisará la administración.</p>
                     </div><button id="cobrar" class="principal">Confirmar pedido</button>
                 </form>
                 <section id="seguimiento" hidden aria-live="polite">
@@ -64,7 +65,7 @@
                     <p id="importes-pedido"></p>
                     <p id="estado-pedido"></p>
                     <button type="button" id="verificar-pago" class="principal">Verificar pago</button>
-                    <p class="ayuda">No vuelvas a pagar si ya transferiste. Conserva tu comprobante y solicita la verificación del administrador.</p>
+                    <p class="ayuda">El estado se actualiza automáticamente. No vuelvas a pagar si ya transferiste. Conserva tu comprobante para cualquier revisión.</p>
                 </section>
             </aside>
         </div>

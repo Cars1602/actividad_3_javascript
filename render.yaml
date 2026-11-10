@@ -16,3 +16,6 @@ services:
         value: admin
       - key: ADMIN_PASSWORD
         sync: false
+
+      - key: YAPE_API_TOKEN
+        sync: false

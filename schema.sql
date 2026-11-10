@@ -52,3 +52,14 @@ END $$;
 -- Clave privada de consulta del pedido para el comprador.
 ALTER TABLE tienda.ventas ADD COLUMN IF NOT EXISTS consulta_token UUID NOT NULL DEFAULT gen_random_uuid();
 CREATE UNIQUE INDEX IF NOT EXISTS ventas_consulta_token_idx ON tienda.ventas(consulta_token);
+
+-- Avisos enviados por el teléfono; recibir un aviso no confirma una venta.
+CREATE TABLE IF NOT EXISTS tienda.notificaciones_yape (
+ evento_id VARCHAR(128) PRIMARY KEY,
+ fecha_recepcion TIMESTAMPTZ NOT NULL,
+ aplicacion VARCHAR(200) NOT NULL,
+ texto_original TEXT NOT NULL,
+ estado VARCHAR(20) NOT NULL DEFAULT 'por_revisar',
+ pedido_id INTEGER UNIQUE REFERENCES tienda.ventas(id),
+ registrado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+);

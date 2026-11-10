@@ -10,7 +10,7 @@ app.disable('x-powered-by');
 // En Render la administración requiere credenciales independientes de Neon.
 function igual(a,b){return timingSafeEqual(createHash('sha256').update(a).digest(),createHash('sha256').update(b).digest());}
 app.use((req,res,next)=>{
- const privada=req.path==='/admin.html'||req.path==='/admin.js'||req.path==='/api/ventas'&&req.method==='GET'||req.path.endsWith('/confirmar')||['/api/productos','/api/categorias','/api/configuracion/qr'].includes(req.path)&&req.method!=='GET';
+ const privada=req.path.startsWith('/api/admin/')||req.path==='/admin.html'||req.path==='/admin.js'||req.path==='/api/ventas'&&req.method==='GET'||req.path.endsWith('/confirmar')||['/api/productos','/api/categorias','/api/configuracion/qr'].includes(req.path)&&req.method!=='GET';
  if(!privada||!process.env.ADMIN_PASSWORD)return next();
  const header=req.headers.authorization||'';
  const raw=header.startsWith('Basic ')?Buffer.from(header.slice(6),'base64').toString():'';
@@ -21,6 +21,34 @@ app.use((req,res,next)=>{
 app.get('/health',async(req,res)=>{try{await pool.query('SELECT 1');res.json({estado:'ok'});}catch{res.status(503).json({estado:'sin conexion'});}});
 app.use(express.json({ limit: '3mb' }));
 app.use(express.static(fileURLToPath(new URL('./public', import.meta.url))));
+// Contrato compatible con el JSON que ya envía el lector Android.
+app.post('/api/yape/notificaciones',async(req,res,next)=>{
+ const token=process.env.YAPE_API_TOKEN;
+ if(!token||token.length<32)return res.status(503).json({error:'Configura YAPE_API_TOKEN en el servidor (mínimo 32 caracteres).'});
+ const auth=req.headers.authorization||'';
+ if(!auth.startsWith('Bearer ')||!igual(auth.slice(7),token))return res.status(401).json({error:'Token del lector inválido.'});
+ const {EventoId,FechaRecepcion,Aplicacion,TextoOriginal}=req.body||{};
+ if(typeof EventoId!=='string'||!/^[-a-zA-Z0-9_:]{16,128}$/.test(EventoId)||typeof Aplicacion!=='string'||Aplicacion.length>200||!Aplicacion||typeof TextoOriginal!=='string'||!TextoOriginal.trim()||TextoOriginal.length>8000||typeof FechaRecepcion!=='string'||!Number.isFinite(Date.parse(FechaRecepcion)))return res.status(400).json({error:'Notificación inválida.'});
+ try{const r=await pool.query('INSERT INTO tienda.notificaciones_yape(evento_id,fecha_recepcion,aplicacion,texto_original) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING RETURNING evento_id',[EventoId,FechaRecepcion,Aplicacion,TextoOriginal]);res.status(r.rowCount?201:200).json({registrado:true,duplicado:!r.rowCount,estado:'por_revisar'});}catch(e){next(e);}
+});
+app.get('/api/admin/yape',async(req,res,next)=>{try{res.json((await pool.query('SELECT * FROM tienda.notificaciones_yape ORDER BY registrado_en DESC LIMIT 100')).rows);}catch(e){next(e);}});
+app.get('/api/admin/yape/excel.csv',async(req,res,next)=>{
+ try{const rows=(await pool.query('SELECT evento_id,fecha_recepcion,aplicacion,texto_original,estado,pedido_id FROM tienda.notificaciones_yape ORDER BY registrado_en DESC LIMIT 10000')).rows;
+ const celda=v=>'"'+String(v??'').replace(/^[=+@\-]/,"'$&").replace(/"/g,'""')+'"';
+ const csv=['EventoId;FechaRecepcion;Aplicacion;TextoOriginal;Estado;PedidoId',...rows.map(r=>Object.values(r).map(celda).join(';'))].join('\r\n');
+ res.set('Content-Disposition','attachment; filename="pagos_yape.csv"').type('text/csv; charset=utf-8').send('\uFEFF'+csv);
+ }catch(e){next(e);}
+});
+app.post('/api/admin/yape/:evento/confirmar',async(req,res,next)=>{
+ const id=Number(req.body.pedido_id);if(!Number.isSafeInteger(id)||id<1||req.body.verificado!==true)return res.status(400).json({error:'Indica el pedido y verifica el abono en el banco.'});
+ let c;try{c=await pool.connect();await c.query('BEGIN');
+ const aviso=(await c.query('SELECT * FROM tienda.notificaciones_yape WHERE evento_id=$1 FOR UPDATE',[req.params.evento])).rows[0];
+ const venta=(await c.query('SELECT * FROM tienda.ventas WHERE id=$1 FOR UPDATE',[id])).rows[0];
+ if(!aviso||aviso.estado!=='por_revisar'||!venta||venta.estado!=='pendiente'||!['qr','mixto'].includes(venta.metodo)){await c.query('ROLLBACK');return res.status(409).json({error:'Aviso o pedido no disponible para confirmar.'});}
+ await c.query("UPDATE tienda.notificaciones_yape SET estado='verificado',pedido_id=$1 WHERE evento_id=$2",[id,req.params.evento]);
+ await c.query("UPDATE tienda.ventas SET estado='pagado' WHERE id=$1",[id]);await c.query('COMMIT');res.json({estado:'pagado',pedido_id:id});
+ }catch(e){if(c)await c.query('ROLLBACK');if(e.code==='23505')res.status(409).json({error:'El pedido ya tiene un aviso asociado.'});else next(e);}finally{c?.release();}
+});
 const imagenValida = imagen => typeof imagen === 'string' && imagen.length <= 2100000 && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(imagen);
 app.get('/api/categorias', async (req, res, next) => { try { res.json((await pool.query('SELECT * FROM tienda.categorias ORDER BY nombre')).rows); } catch (e) { next(e); } });
 app.post('/api/categorias', async (req, res, next) => {
@@ -43,7 +71,7 @@ app.post('/api/productos', async (req, res, next) => {
 // Consulta de estado con clave aleatoria, sin exponer ventas de otros compradores.
 app.get('/api/pedidos/:token',async(req,res,next)=>{
  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(req.params.token))return res.status(400).json({error:'Clave de pedido inválida.'});
- try{const r=await pool.query('SELECT id,total,metodo,estado,monto_efectivo,monto_qr FROM tienda.ventas WHERE consulta_token=$1',[req.params.token]);if(!r.rowCount)return res.status(404).json({error:'Pedido no encontrado.'});res.json({...r.rows[0],verificacion_excel:'no_configurada'});}catch(e){next(e);}
+ try{const r=await pool.query('SELECT id,total,metodo,estado,monto_efectivo,monto_qr FROM tienda.ventas WHERE consulta_token=$1',[req.params.token]);if(!r.rowCount)return res.status(404).json({error:'Pedido no encontrado.'});res.json({...r.rows[0],verificacion_excel:'reemplazada_por_neon'});}catch(e){next(e);}
 });
 app.get('/api/ventas', async (req, res, next) => { try { res.json((await pool.query('SELECT * FROM tienda.ventas ORDER BY id DESC LIMIT 30')).rows); } catch (e) { next(e); } });
 // La transacción bloquea existencias y calcula el total con precios del servidor.

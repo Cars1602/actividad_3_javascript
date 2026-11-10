@@ -37,7 +37,7 @@ $(function () {
         $('#seguimiento').prop('hidden',false);
         $('#numero-pedido').text('Pedido #'+v.id);
         $('#importes-pedido').text('Total: '+dinero(v.total)+' · Efectivo: '+dinero(v.monto_efectivo)+' · QR: '+dinero(v.monto_qr));
-        $('#estado-pedido').text(v.estado==='pagado'?'Pago confirmado en el sistema.':'Pedido registrado. Pago pendiente de verificación. La conexión automática con Excel todavía no está configurada.');
+        $('#estado-pedido').text(v.estado==='pagado'?'Pago confirmado en el sistema.':'Pedido registrado. Pago pendiente de verificación. La administración verificará el aviso de Yape recibido en el sistema.');
         $('#verificar-pago').prop('disabled',v.estado==='pagado');
     }
     $('#verificar-pago').on('click',async function(){

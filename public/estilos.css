@@ -530,3 +530,16 @@ header{background:#10131deF;border-bottom:1px solid var(--linea);padding-top:24p
 @media(max-width:480px){.producto-admin{flex-wrap:wrap}.producto-admin .editar-producto{width:100%}}
 
 .lista-categorias{display:grid;gap:8px;margin-top:18px}.categoria-admin{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 12px;background:var(--panel);border:1px solid var(--linea);border-radius:8px}.categoria-admin span{overflow-wrap:anywhere;min-width:0}.categoria-admin small{color:var(--suave)}.categoria-admin button{font-size:12px;padding:7px 11px;color:#ffc4d1;border-color:#683045;flex-shrink:0}
+
+.filtros-catalogo{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:0 0 14px}
+.resumen-catalogo{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+#resultado-catalogo{color:var(--suave);font-size:13px;margin:0}.resumen-catalogo button{padding:7px 11px;font-size:12px}
+.panel-carrito{position:sticky;top:20px;max-height:calc(100vh - 40px);overflow:auto;scrollbar-width:thin}
+.panel-carrito>.titulo{margin-bottom:12px}.panel-carrito #contador{background:#252e1d;color:var(--acento);padding:6px 10px;border-radius:20px;white-space:nowrap}
+.item-carrito{padding:18px 0}.cabecera-item{display:flex;align-items:center;gap:12px}.cabecera-item>div{flex:1;min-width:0}.cabecera-item h3{margin:0 0 5px;overflow-wrap:anywhere}.cabecera-item small{font-size:12px;color:var(--suave)}
+.miniatura-carrito{width:54px;height:62px;border-radius:7px;object-fit:cover}.cabecera-item .quitar{font-size:11px;padding:6px 8px}
+.acciones-cantidad{justify-content:space-between;margin-top:14px}.selector-cantidad{display:flex;align-items:center;gap:0;border:1px solid #374058;border-radius:8px;overflow:hidden}
+.selector-cantidad button{border:0;border-radius:0;width:34px;height:36px;padding:0;font-size:20px}.selector-cantidad input.cantidad{width:52px;max-width:52px;margin:0;padding:6px 2px;text-align:center;border:0;border-radius:0;height:36px;-moz-appearance:textfield}
+.selector-cantidad input::-webkit-inner-spin-button{appearance:none}.subtotal-item{font-size:17px;color:var(--acento)}
+@media(max-width:900px){.panel-carrito{position:static;max-height:none;overflow:visible}}
+@media(max-width:480px){.filtros-catalogo{grid-template-columns:1fr}.cabecera-item{gap:8px}.miniatura-carrito{width:44px;height:52px}}

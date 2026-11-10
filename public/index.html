@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>NexusPlay · Carrito de compras</title>
-    <link rel="stylesheet" href="estilos.css?v=20261110-5">
+    <link rel="stylesheet" href="estilos.css?v=20261110-7">
     <script defer src="/jquery.min.js"></script>
-    <script defer src="app.js?v=20261110-5"></script>
+    <script defer src="app.js?v=20261110-7"></script>
 </head>
 
 <body>
@@ -34,16 +34,21 @@
 
                 <label class="buscar">Buscar videojuego<input id="buscar" type="search"
                         placeholder="Busca el título de un videojuego…"></label>
+                <div class="filtros-catalogo">
+                    <label>Categoría<select id="filtrar-categoria"><option value="">Todas las categorías</option></select></label>
+                    <label>Ordenar por<select id="orden-productos"><option value="recientes">Más recientes</option><option value="nombre">Nombre A–Z</option><option value="precio-asc">Menor precio</option><option value="precio-desc">Mayor precio</option></select></label>
+                </div>
+                <div class="resumen-catalogo"><p id="resultado-catalogo" role="status"></p><button type="button" id="limpiar-filtros" class="secundario" hidden>Limpiar filtros</button></div>
                 <div id="catalogo"></div>
                 <p id="sin-productos">Cargando videojuegos…</p>
                 <button id="reintentar-catalogo" class="secundario" hidden>Reintentar inventario</button>
             </section>
-            <aside>
+            <aside class="panel-carrito">
                 <div class="titulo">
                     <h2>Tu carrito</h2><span id="contador">0 unidades</span>
                 </div>
                 <div id="carrito"></div>
-                <p id="vacio">Tu carrito está vacío. Elige un videojuego para comenzar.</p>
+                <p id="vacio">Tu próxima partida empieza aquí. Agrega un videojuego para armar tu compra.</p>
                 <div class="total"><span>Total</span><strong id="total">Bs 0.00</strong></div><button id="vaciar"
                     class="secundario">Vaciar carrito</button>
                 <form id="pago">

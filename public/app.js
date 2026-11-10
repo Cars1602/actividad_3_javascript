@@ -11,7 +11,7 @@ $(function () {
         try {
             const datos = await api('productos');
             if (!Array.isArray(datos)) throw new Error('Respuesta de catálogo inválida');
-            productos = datos; catalogo(); $('#reintentar-catalogo').prop('hidden',true);
+            productos = datos; cargarFiltros(); catalogo(); $('#reintentar-catalogo').prop('hidden',true);
         } catch (e) {
             $('#sin-productos').text('No se pudo actualizar el inventario. Puedes reintentar la carga.').show();
             $('#reintentar-catalogo').prop('hidden',false);
@@ -19,10 +19,24 @@ $(function () {
         }
     }
     $('#reintentar-catalogo').on('click',function(){cargar().catch(fallo);});
+    const normalizarBusqueda = t => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    function cargarFiltros(){
+        const seleccion=$('#filtrar-categoria').val();
+        const conteo=new Map();productos.forEach(p=>conteo.set(p.categoria,(conteo.get(p.categoria)||0)+1));
+        const lista=$('#filtrar-categoria').empty().append($('<option>').val('').text('Todas las categorías ('+productos.length+')'));
+        [...conteo.keys()].sort((a,b)=>a.localeCompare(b,'es')).forEach(c=>lista.append($('<option>').val(c).text(c+' ('+conteo.get(c)+')')));
+        if(conteo.has(seleccion))lista.val(seleccion);
+    }
     function catalogo() {
-        $('#catalogo').empty(); const texto = $('#buscar').val().toLowerCase();
-        const visibles = productos.filter(p => p.nombre.toLowerCase().includes(texto));
-        $('#sin-productos').text(productos.length ? 'No hay coincidencias.' : 'Aún no hay videojuegos. Agrégalos desde el panel admin.').toggle(!visibles.length);
+        $('#catalogo').empty();
+        const texto=normalizarBusqueda($('#buscar').val().trim()),categoria=$('#filtrar-categoria').val(),orden=$('#orden-productos').val();
+        const visibles=productos.filter(p=>(!categoria||p.categoria===categoria)&&normalizarBusqueda(p.nombre+' '+(p.descripcion||'')).includes(texto));
+        if(orden==='nombre')visibles.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+        if(orden==='precio-asc')visibles.sort((a,b)=>Number(a.precio)-Number(b.precio)||a.id-b.id);
+        if(orden==='precio-desc')visibles.sort((a,b)=>Number(b.precio)-Number(a.precio)||a.id-b.id);
+        $('#resultado-catalogo').text(visibles.length+' de '+productos.length+' productos'+(categoria?' · '+categoria:''));
+        $('#limpiar-filtros').prop('hidden',!texto&&!categoria&&orden==='recientes');
+        $('#sin-productos').text(productos.length?'No encontramos productos con esos filtros. Prueba otra categoría o búsqueda.':'Aún no hay videojuegos. Agrégalos desde el panel admin.').toggle(!visibles.length);
         visibles.forEach(p => {
             const fila = $('<article class="producto">');
             const datos = $('<div>');
@@ -36,15 +50,38 @@ $(function () {
         });
     }
     function dibujar() {
-        $('#carrito').empty(); carrito.forEach(i => { const fila = $('<div class="fila">').attr('data-id', i.id); fila.append($('<h3>').text(i.nombre)); const acciones = $('<div class="acciones">'); acciones.append($('<input type="number" min="1" step="1" class="cantidad">').attr({ 'max': i.stock, 'aria-label': 'Cantidad de ' + i.nombre }).val(i.cantidad), $('<span>').text(dinero(Number(i.precio) * i.cantidad)), $('<button class="quitar secundario">').text('Quitar')); fila.append(acciones); $('#carrito').append(fila); });
+        $('#carrito').empty();
+        carrito.forEach(i=>{
+            const fila=$('<article class="fila item-carrito">').attr('data-id',i.id);
+            const cabecera=$('<div class="cabecera-item">');
+            if(i.imagen)cabecera.append($('<img class="miniatura-carrito">').attr({src:i.imagen,alt:i.nombre}));
+            cabecera.append($('<div>').append($('<h3>').text(i.nombre),$('<small>').text(dinero(i.precio)+' por unidad')),
+                $('<button type="button" class="quitar secundario">').attr('aria-label','Quitar '+i.nombre).text('Quitar'));
+            const acciones=$('<div class="acciones acciones-cantidad">');
+            const selector=$('<div class="selector-cantidad">').append(
+                $('<button type="button" class="menos secundario">').attr('aria-label','Restar una unidad de '+i.nombre).text('−').prop('disabled',ocupado||i.cantidad<=1),
+                $('<input type="number" min="1" step="1" class="cantidad">').attr({max:i.stock,'aria-label':'Cantidad de '+i.nombre}).val(i.cantidad).prop('disabled',ocupado),
+                $('<button type="button" class="mas secundario">').attr('aria-label','Sumar una unidad de '+i.nombre).text('+').prop('disabled',ocupado||i.cantidad>=i.stock));
+            acciones.append(selector,$('<strong class="subtotal-item">').text(dinero(Number(i.precio)*i.cantidad)));
+            fila.append(cabecera,acciones);$('#carrito').append(fila);
+        });
         $('#vacio').toggle(!carrito.length); $('#total').text(dinero(total())); $('#contador').text(carrito.reduce((s, i) => s + i.cantidad, 0) + ' unidades'); $('#cobrar,#vaciar').prop('disabled', ocupado || !carrito.length); cambio();
         if($('[name=metodo]:checked').val()==='qr_demo')programarDemo();
     }
     function cambio() { const recibido = Number($('#recibido').val()); $('#cambio').text(dinero(Math.max(0, recibido - total()))); $('#saldo-qr').text(dinero(Math.max(0, Math.round(total() * 100 - Math.round(recibido * 100)) / 100))); }
     $('#buscar').on('input', catalogo);
+    $('#filtrar-categoria,#orden-productos').on('change',catalogo);
+    $('#limpiar-filtros').on('click',()=>{$('#buscar').val('');$('#filtrar-categoria').val('');$('#orden-productos').val('recientes');catalogo();});
+    $('#carrito').on('click','.menos,.mas',function(){
+        if(ocupado)return;
+        const i=carrito.find(i=>i.id===Number($(this).closest('.fila').attr('data-id')));if(!i)return;
+        const siguiente=i.cantidad+($(this).hasClass('mas')?1:-1);
+        if(siguiente<1||siguiente>i.stock)return;
+        i.cantidad=siguiente;dibujar();
+    });
     $('#catalogo').on('click', '.agregar', function () { if (ocupado) return; const p = productos.find(p => p.id === Number($(this).attr('data-id'))); let i = carrito.find(i => i.id === p.id); if ((i?.cantidad || 0) >= p.stock) return mensaje('No hay más existencias disponibles.', true); if (i) i.cantidad++; else carrito.push({ ...p, cantidad: 1 }); dibujar(); $('#total').stop(true, true).fadeOut(80).fadeIn(150); });
-    $('#carrito').on('change', '.cantidad', function () { const i = carrito.find(i => i.id === Number($(this).closest('.fila').attr('data-id'))); const n = Number(this.value); if (!Number.isInteger(n) || n < 1 || n > i.stock) { this.value = i.cantidad; return mensaje('Cantidad fuera de las existencias disponibles.', true); } i.cantidad = n; dibujar(); });
-    $('#carrito').on('click', '.quitar', function () { if (ocupado) return; const fila = $(this).closest('.fila'); const id = Number(fila.attr('data-id')); fila.slideUp(160, () => { carrito = carrito.filter(i => i.id !== id); dibujar(); }); });
+    $('#carrito').on('change', '.cantidad', function () { if(ocupado)return; const i = carrito.find(i => i.id === Number($(this).closest('.fila').attr('data-id'))); const n = Number(this.value); if (!Number.isInteger(n) || n < 1 || n > i.stock) { this.value = i.cantidad; return mensaje('Cantidad fuera de las existencias disponibles.', true); } i.cantidad = n; dibujar(); });
+    $('#carrito').on('click', '.quitar', function () { if(ocupado)return; if (ocupado) return; const fila = $(this).closest('.fila'); const id = Number(fila.attr('data-id')); fila.slideUp(160, () => { carrito = carrito.filter(i => i.id !== id); dibujar(); }); });
     $('#vaciar').on('click', () => { if (confirm('¿Vaciar el carrito?')) { carrito = []; dibujar(); } });
     $('[name=metodo]').on('change', function () {
         const demo=this.value==='qr_demo',mixto=this.value==='mixto',qr=this.value==='qr'||mixto;

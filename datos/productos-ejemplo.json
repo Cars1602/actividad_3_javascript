@@ -1,0 +1,182 @@
+[
+  {
+    "nombre": "Hollow Knight",
+    "categoria": "Indie",
+    "precio": 35,
+    "stock": 25,
+    "descripcion": "Producto de ejemplo. Aventura de exploración en un reino subterráneo.",
+    "imagen_url": "https://cdn.akamai.steamstatic.com/steam/apps/367520/header.jpg",
+    "fuente": "https://store.steampowered.com/app/367520/"
+  },
+  {
+    "nombre": "Stardew Valley",
+    "categoria": "Simulación",
+    "precio": 25,
+    "stock": 30,
+    "descripcion": "Producto de ejemplo. Cultiva tu granja, pesca y conoce a los habitantes del pueblo.",
+    "imagen_url": "https://cdn.akamai.steamstatic.com/steam/apps/413150/header.jpg",
+    "fuente": "https://store.steampowered.com/app/413150/"
+  },
+  {
+    "nombre": "Terraria",
+    "categoria": "Aventura",
+    "precio": 20,
+    "stock": 35,
+    "descripcion": "Producto de ejemplo. Explora, construye y combate en un mundo de dos dimensiones.",
+    "imagen_url": "https://cdn.akamai.steamstatic.com/steam/apps/105600/header.jpg",
+    "fuente": "https://store.steampowered.com/app/105600/"
+  },
+  {
+    "nombre": "Hades",
+    "categoria": "Acción",
+    "precio": 40,
+    "stock": 20,
+    "descripcion": "Producto de ejemplo. Combates rápidos y exploración del inframundo.",
+    "imagen_url": "https://cdn.akamai.steamstatic.com/steam/apps/1145360/header.jpg",
+    "fuente": "https://store.steampowered.com/app/1145360/"
+  },
+  {
+    "nombre": "Vampire Survivors",
+    "categoria": "Indie",
+    "precio": 15,
+    "stock": 40,
+    "descripcion": "Producto de ejemplo. Sobrevive a oleadas de enemigos y combina mejoras.",
+    "imagen_url": "https://cdn.akamai.steamstatic.com/steam/apps/1794680/header.jpg",
+    "fuente": "https://store.steampowered.com/app/1794680/"
+  },
+  {
+    "nombre": "Cyberpunk 2077",
+    "categoria": "RPG",
+    "precio": 80,
+    "stock": 15,
+    "descripcion": "Producto de ejemplo. Aventura de rol y acción en una ciudad futurista.",
+    "imagen_url": "https://cdn.akamai.steamstatic.com/steam/apps/1091500/header.jpg",
+    "fuente": "https://store.steampowered.com/app/1091500/"
+  },
+  {
+    "nombre": "ELDEN RING",
+    "categoria": "RPG",
+    "precio": 90,
+    "stock": 12,
+    "descripcion": "Producto de ejemplo. Exploración de fantasía con combates y grandes desafíos.",
+    "imagen_url": "https://cdn.akamai.steamstatic.com/steam/apps/1245620/header.jpg",
+    "fuente": "https://store.steampowered.com/app/1245620/"
+  },
+  {
+    "nombre": "Baldur’s Gate 3",
+    "categoria": "RPG",
+    "precio": 95,
+    "stock": 10,
+    "descripcion": "Producto de ejemplo. Aventura de rol con decisiones y combates por turnos.",
+    "imagen_url": "https://cdn.akamai.steamstatic.com/steam/apps/1086940/header.jpg",
+    "fuente": "https://store.steampowered.com/app/1086940/"
+  },
+  {
+    "nombre": "Red Dead Redemption 2",
+    "categoria": "Aventura",
+    "precio": 85,
+    "stock": 15,
+    "descripcion": "Producto de ejemplo. Aventura de mundo abierto ambientada en el lejano oeste.",
+    "imagen_url": "https://cdn.akamai.steamstatic.com/steam/apps/1174180/header.jpg",
+    "fuente": "https://store.steampowered.com/app/1174180/"
+  },
+  {
+    "nombre": "Grand Theft Auto V",
+    "categoria": "Acción",
+    "precio": 65,
+    "stock": 20,
+    "descripcion": "Producto de ejemplo. Acción y exploración en una gran ciudad de mundo abierto.",
+    "imagen_url": "https://cdn.akamai.steamstatic.com/steam/apps/271590/header.jpg",
+    "fuente": "https://store.steampowered.com/app/271590/"
+  },
+  {
+    "nombre": "Counter-Strike 2",
+    "categoria": "Acción",
+    "precio": 15,
+    "stock": 50,
+    "descripcion": "Producto de ejemplo. Partidas tácticas de acción por equipos.",
+    "imagen_url": "https://cdn.akamai.steamstatic.com/steam/apps/730/header.jpg",
+    "fuente": "https://store.steampowered.com/app/730/"
+  },
+  {
+    "nombre": "Dota 2",
+    "categoria": "Estrategia",
+    "precio": 15,
+    "stock": 45,
+    "descripcion": "Producto de ejemplo. Estrategia por equipos con héroes de habilidades distintas.",
+    "imagen_url": "https://cdn.akamai.steamstatic.com/steam/apps/570/header.jpg",
+    "fuente": "https://store.steampowered.com/app/570/"
+  },
+  {
+    "nombre": "Team Fortress 2",
+    "categoria": "Acción",
+    "precio": 15,
+    "stock": 40,
+    "descripcion": "Producto de ejemplo. Acción por equipos con clases y estilos de juego diferentes.",
+    "imagen_url": "https://cdn.akamai.steamstatic.com/steam/apps/440/header.jpg",
+    "fuente": "https://store.steampowered.com/app/440/"
+  },
+  {
+    "nombre": "Sid Meier’s Civilization VI",
+    "categoria": "Estrategia",
+    "precio": 45,
+    "stock": 18,
+    "descripcion": "Producto de ejemplo. Construye una civilización y toma decisiones por turnos.",
+    "imagen_url": "https://cdn.akamai.steamstatic.com/steam/apps/289070/header.jpg",
+    "fuente": "https://store.steampowered.com/app/289070/"
+  },
+  {
+    "nombre": "Europa Universalis IV",
+    "categoria": "Estrategia",
+    "precio": 50,
+    "stock": 15,
+    "descripcion": "Producto de ejemplo. Dirige una nación mediante diplomacia, comercio y estrategia.",
+    "imagen_url": "https://cdn.akamai.steamstatic.com/steam/apps/236850/header.jpg",
+    "fuente": "https://store.steampowered.com/app/236850/"
+  },
+  {
+    "nombre": "Stellaris",
+    "categoria": "Estrategia",
+    "precio": 55,
+    "stock": 18,
+    "descripcion": "Producto de ejemplo. Explora la galaxia y desarrolla una civilización espacial.",
+    "imagen_url": "https://cdn.akamai.steamstatic.com/steam/apps/281990/header.jpg",
+    "fuente": "https://store.steampowered.com/app/281990/"
+  },
+  {
+    "nombre": "Cities: Skylines",
+    "categoria": "Simulación",
+    "precio": 40,
+    "stock": 22,
+    "descripcion": "Producto de ejemplo. Diseña una ciudad y administra sus servicios y transporte.",
+    "imagen_url": "https://cdn.akamai.steamstatic.com/steam/apps/255710/header.jpg",
+    "fuente": "https://store.steampowered.com/app/255710/"
+  },
+  {
+    "nombre": "Euro Truck Simulator 2",
+    "categoria": "Simulación",
+    "precio": 35,
+    "stock": 28,
+    "descripcion": "Producto de ejemplo. Conduce camiones y administra rutas de transporte.",
+    "imagen_url": "https://cdn.akamai.steamstatic.com/steam/apps/227300/header.jpg",
+    "fuente": "https://store.steampowered.com/app/227300/"
+  },
+  {
+    "nombre": "Forza Horizon 5",
+    "categoria": "Carreras",
+    "precio": 85,
+    "stock": 16,
+    "descripcion": "Producto de ejemplo. Carreras y exploración con diferentes tipos de vehículos.",
+    "imagen_url": "https://cdn.akamai.steamstatic.com/steam/apps/1551360/header.jpg",
+    "fuente": "https://store.steampowered.com/app/1551360/"
+  },
+  {
+    "nombre": "Assetto Corsa Competizione",
+    "categoria": "Carreras",
+    "precio": 60,
+    "stock": 18,
+    "descripcion": "Producto de ejemplo. Simulación de conducción y carreras de competición.",
+    "imagen_url": "https://cdn.akamai.steamstatic.com/steam/apps/805550/header.jpg",
+    "fuente": "https://store.steampowered.com/app/805550/"
+  }
+]

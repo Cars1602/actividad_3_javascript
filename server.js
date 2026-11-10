@@ -21,7 +21,7 @@ app.use((req,res,next)=>{
  if(corte>0&&igual(usuario,process.env.ADMIN_USER||'admin')&&igual(clave,process.env.ADMIN_PASSWORD))return next();
  res.set('WWW-Authenticate','Basic realm="NexusPlay Admin", charset="UTF-8"');res.status(401).send('Acceso de administración requerido.');
 });
-app.get('/health',async(req,res)=>{try{await pool.query('SELECT 1');res.json({estado:'ok',version:'categorias-eliminar-4'});}catch{res.status(503).json({estado:'sin conexion'});}});
+app.get('/health',async(req,res)=>{try{await pool.query('SELECT 1');res.json({estado:'ok',version:'catalogo-categorias-carrito-5'});}catch{res.status(503).json({estado:'sin conexion'});}});
 app.use(express.json({ limit: '3mb' }));
 app.use(express.static(fileURLToPath(new URL('./public', import.meta.url))));
 let sincronizandoSheets=false;

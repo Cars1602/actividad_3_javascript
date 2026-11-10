@@ -35,3 +35,12 @@ La tienda mantiene el QR estático bancario y agrega la opción `QR con monto (d
 En administración, el botón Editar de cada producto carga nombre, categoría, precio, descripción, cantidad e imagen. Guardar cambios actualiza el producto existente; no exige subir la foto otra vez. Cancelar edición vuelve al alta. La ruta PUT /api/productos/:id requiere las credenciales de administración en producción.
 
 Prueba: `node --env-file-if-exists=.env verificar-qr-edicion.mjs`. Crea un producto temporal de prueba, comprueba edición y generación de QR, y elimina exclusivamente ese producto al terminar.
+
+
+## Filtros y catálogo de ejemplo
+
+La tienda filtra por categoría y búsqueda a la vez, muestra el número de resultados y permite ordenar por nombre o precio. El carrito incluye miniaturas, precio unitario, subtotal y controles de cantidad.
+
+Se cargaron 20 productos de ejemplo sin modificar los productos anteriores. Precios y cantidades son demostrativos y se pueden cambiar desde administración. Las portadas proceden de Steam; cada entrada conserva su URL de origen en datos/productos-ejemplo.json.
+
+Para cargar estos ejemplos en otra base de datos: `node --env-file-if-exists=.env cargar-productos-ejemplo.mjs`. La carga es explícita, no se ejecuta al iniciar el servidor y omite nombres ya existentes.

@@ -1,3 +1,4 @@
+import { sincronizarRegistros } from './sheets-sync.js';
 import { normalizarNombre, reconciliarAviso } from './pagos-yape.js';
 import { timingSafeEqual, createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -25,20 +26,9 @@ app.use(express.static(fileURLToPath(new URL('./public', import.meta.url))));
 let sincronizandoSheets=false;
 async function sincronizarSheets(){
  if(sincronizandoSheets)return;
- const url=process.env.GOOGLE_SHEETS_URL,token=process.env.GOOGLE_SHEETS_TOKEN;
- if(!url||!token)return;
- const destino=new URL(url);
- if(destino.protocol!=='https:'||destino.hostname!=='script.google.com'||!destino.pathname.endsWith('/exec'))throw new Error('Configura la URL de implementación de Apps Script.');
  sincronizandoSheets=true;
- try{
-  const eventos=(await pool.query('SELECT evento_id,fecha_recepcion,aplicacion,texto_original,estado,pedido_id,registrado_en FROM tienda.notificaciones_yape WHERE sheets_sincronizado_en IS NULL ORDER BY registrado_en LIMIT 50')).rows;
-  if(!eventos.length)return;
-  const respuesta=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,eventos}),signal:AbortSignal.timeout(30000)});
-  const resultado=await respuesta.json();
-  if(!respuesta.ok||resultado.ok!==true||!Array.isArray(resultado.aceptados))throw new Error('Google no confirmó el registro.');
-  const aceptados=eventos.map(e=>e.evento_id).filter(id=>resultado.aceptados.includes(id));
-  if(aceptados.length)await pool.query('UPDATE tienda.notificaciones_yape SET sheets_sincronizado_en=now() WHERE evento_id=ANY($1::text[])',[aceptados]);
- }finally{sincronizandoSheets=false;}
+ try{return await sincronizarRegistros(pool,process.env.GOOGLE_SHEETS_URL,process.env.GOOGLE_SHEETS_TOKEN);}
+ finally{sincronizandoSheets=false;}
 }
 app.post('/api/admin/yape/sincronizar',async(req,res)=>{try{await sincronizarSheets();res.json({configurado:!!(process.env.GOOGLE_SHEETS_URL&&process.env.GOOGLE_SHEETS_TOKEN),mensaje:'Sincronización revisada. Actualiza los avisos.'});}catch{res.status(503).json({error:'No se pudo sincronizar con Google. El aviso permanece guardado en Neon.'});}});
 setInterval(()=>sincronizarSheets().catch(()=>console.error('Google Sheets pendiente de sincronizar.')),60000).unref();
@@ -97,7 +87,7 @@ app.post('/api/admin/yape/:evento/confirmar',async(req,res,next)=>{
  const venta=(await c.query('SELECT * FROM tienda.ventas WHERE id=$1 FOR UPDATE',[id])).rows[0];
  if(!aviso||aviso.estado!=='por_revisar'||!venta||venta.estado!=='pendiente'||!['qr','mixto'].includes(venta.metodo)){await c.query('ROLLBACK');return res.status(409).json({error:'Aviso o pedido no disponible para confirmar.'});}
  await c.query("UPDATE tienda.notificaciones_yape SET estado='verificado',sheets_sincronizado_en=NULL,pedido_id=$1 WHERE evento_id=$2",[id,req.params.evento]);
- await c.query("UPDATE tienda.ventas SET estado='pagado' WHERE id=$1",[id]);await c.query('COMMIT');res.json({estado:'pagado',pedido_id:id});
+ await c.query("UPDATE tienda.ventas SET estado='pagado',sheets_sincronizado_en=NULL WHERE id=$1",[id]);await c.query('COMMIT');res.json({estado:'pagado',pedido_id:id});
  }catch(e){if(c)await c.query('ROLLBACK');if(e.code==='23505')res.status(409).json({error:'El pedido ya tiene un aviso asociado.'});else next(e);}finally{c?.release();}
 });
 const imagenValida = imagen => typeof imagen === 'string' && imagen.length <= 2100000 && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(imagen);
@@ -177,7 +167,7 @@ app.post('/api/ventas', async (req, res, next) => {
 });
 app.post('/api/ventas/:id/confirmar', async (req, res, next) => {
     if (!/^\d+$/.test(req.params.id)) return res.sendStatus(400);
-    try { const r = await pool.query("UPDATE tienda.ventas SET estado='pagado' WHERE id=$1 AND metodo IN ('qr','mixto') AND estado='pendiente' RETURNING *", [req.params.id]); if (!r.rowCount) return res.status(404).json({ error: 'Venta pendiente no encontrada.' }); res.json(r.rows[0]); } catch (e) { next(e); }
+    try { const r = await pool.query("UPDATE tienda.ventas SET estado='pagado',sheets_sincronizado_en=NULL WHERE id=$1 AND metodo IN ('qr','mixto') AND estado='pendiente' RETURNING *", [req.params.id]); if (!r.rowCount) return res.status(404).json({ error: 'Venta pendiente no encontrada.' }); res.json(r.rows[0]); } catch (e) { next(e); }
 });
 app.use((err, req, res, next) => { console.error('Error de servicio:', err.code || 'desconocido'); res.status(503).json({ error: 'No se pudo completar la operación. Revisa la conexión con PostgreSQL.' }); });
 try { if(process.env.NODE_ENV==='production'&&!process.env.ADMIN_PASSWORD)throw new Error('Configura ADMIN_PASSWORD'); if (!process.env.DATABASE_URL) throw new Error('Falta DATABASE_URL'); await pool.query(await readFile(new URL('./schema.sql', import.meta.url), 'utf8')); await pool.query(await readFile(new URL('./migracion.sql', import.meta.url), 'utf8')); app.listen(process.env.PORT || 3001, '0.0.0.0', () => console.log('NexusPlay iniciado en puerto ' + (process.env.PORT || 3001))); } catch (e) { console.error('No se pudo iniciar. Configura DATABASE_URL y revisa Neon.', e.code || ''); await pool.end(); process.exitCode = 1; }

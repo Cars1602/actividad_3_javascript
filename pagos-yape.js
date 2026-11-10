@@ -40,6 +40,6 @@ export async function reconciliarAviso(c,id) {
     const venta=candidatos[0];
     await c.query(`UPDATE tienda.notificaciones_yape SET pedido_id=$1,huella_pago=$2,
         estado='qr_detectado',sheets_sincronizado_en=NULL WHERE evento_id=$3`,[venta.id,huella,id]);
-    await c.query(`UPDATE tienda.ventas SET qr_verificado=true,estado=CASE WHEN metodo='qr' THEN 'pagado' ELSE estado END WHERE id=$1`,[venta.id]);
+    await c.query(`UPDATE tienda.ventas SET qr_verificado=true,sheets_sincronizado_en=NULL,estado=CASE WHEN metodo='qr' THEN 'pagado' ELSE estado END WHERE id=$1`,[venta.id]);
     return {pedido_id:venta.id,estado:venta.metodo==='qr'?'pagado':'pendiente'};
 }

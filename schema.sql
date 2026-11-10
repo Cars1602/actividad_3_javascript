@@ -72,3 +72,6 @@ ALTER TABLE tienda.ventas ADD COLUMN IF NOT EXISTS nombre_pagador_clave TEXT NOT
 ALTER TABLE tienda.ventas ADD COLUMN IF NOT EXISTS qr_verificado BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE tienda.notificaciones_yape ADD COLUMN IF NOT EXISTS huella_pago TEXT;
 CREATE UNIQUE INDEX IF NOT EXISTS yape_huella_asociada_idx ON tienda.notificaciones_yape(huella_pago) WHERE pedido_id IS NOT NULL;
+
+-- Cada venta mantiene su propia sincronización, además de los avisos del teléfono.
+ALTER TABLE tienda.ventas ADD COLUMN IF NOT EXISTS sheets_sincronizado_en TIMESTAMPTZ;

@@ -40,6 +40,11 @@ app.post('/api/productos', async (req, res, next) => {
     if (typeof nombre !== 'string' || !nombre.trim() || nombre.length > 100 || !Number.isFinite(precio) || precio <= 0 || precio >= 100000000 || Math.abs(precio * 100 - Math.round(precio * 100)) > .001 || !Number.isInteger(stock) || stock < 0 || stock > 1000000) return res.status(400).json({ error: 'Revisa nombre, precio y existencias.' });
     try { if (!(await pool.query('SELECT 1 FROM tienda.categorias WHERE nombre=$1', [categoria.trim()])).rowCount) return res.status(400).json({ error: 'Selecciona una categoría registrada.' }); res.status(201).json((await pool.query('INSERT INTO tienda.productos(nombre,precio,stock,descripcion,categoria,imagen) VALUES($1,$2,$3,$4,$5,$6) RETURNING *', [nombre.trim(), precio, stock, descripcion.trim(), categoria.trim() || "General", imagen])).rows[0]); } catch (e) { next(e); }
 });
+// Consulta de estado con clave aleatoria, sin exponer ventas de otros compradores.
+app.get('/api/pedidos/:token',async(req,res,next)=>{
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(req.params.token))return res.status(400).json({error:'Clave de pedido inválida.'});
+ try{const r=await pool.query('SELECT id,total,metodo,estado,monto_efectivo,monto_qr FROM tienda.ventas WHERE consulta_token=$1',[req.params.token]);if(!r.rowCount)return res.status(404).json({error:'Pedido no encontrado.'});res.json({...r.rows[0],verificacion_excel:'no_configurada'});}catch(e){next(e);}
+});
 app.get('/api/ventas', async (req, res, next) => { try { res.json((await pool.query('SELECT * FROM tienda.ventas ORDER BY id DESC LIMIT 30')).rows); } catch (e) { next(e); } });
 // La transacción bloquea existencias y calcula el total con precios del servidor.
 app.post('/api/ventas', async (req, res, next) => {

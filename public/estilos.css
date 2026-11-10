@@ -499,3 +499,5 @@ header{background:#10131deF;border-bottom:1px solid var(--linea);padding-top:24p
 @media(max-width:480px){h1{font-size:36px;letter-spacing:-1px}.marca{font-size:24px}.enlace{font-size:12px;padding:10px}.producto .foto-producto{height:180px}.producto>div:not(.sin-foto){padding:13px}.producto .agregar{margin:0 13px 13px}.producto h3{font-size:16px}.producto strong{font-size:18px}.titulo{gap:10px}.etiqueta{display:none}.opciones{gap:15px}}
 
 .opciones{flex-wrap:wrap;gap:10px 20px}#resumen-saldo{color:var(--acento);font-size:17px}
+
+#seguimiento{margin-top:24px;padding-top:20px;border-top:1px solid var(--linea)}#estado-pedido{line-height:1.6;color:var(--acento)}

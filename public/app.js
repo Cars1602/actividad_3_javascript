@@ -1,6 +1,6 @@
 // Selectores #id, .clase y atributos, eventos delegados y efectos de jQuery.
 $(function () {
-    let productos = [], carrito = [], ocupado = false;
+    let productos = [], carrito = [], ocupado = false, pedidoToken='';
     const dinero = n => 'Bs ' + Number(n).toFixed(2);
     const total = () => carrito.reduce((s, i) => s + Math.round(Number(i.precio) * 100) * i.cantidad, 0) / 100;
     function mensaje(t, error = false) { $('#mensaje').text(t).toggleClass('error', error).stop(true, true).hide().fadeIn(180); }
@@ -27,12 +27,37 @@ $(function () {
         const mixto=this.value==='mixto', qr=this.value!=='efectivo';
         $('#efectivo').prop('hidden',this.value==='qr');$('#qr').prop('hidden',!qr);
         $('#recibido').prop('required',this.value!=='qr');$('#resumen-saldo').prop('hidden',!mixto);
-        $('#resumen-cambio').prop('hidden',mixto);$('#cobrar').text(qr?'Registrar pedido pendiente':'Registrar cobro');
+        $('#resumen-cambio').prop('hidden',mixto);$('#cobrar').text('Confirmar pedido');
         cambio();if(qr)cargarQR();
     });
     $('#recibido').prop('required', true).on('input', cambio);
     async function cargarQR() { try { const c = await api('configuracion'); if (c.qr_imagen) { $('#imagen-qr').attr('src', c.qr_imagen).prop('hidden', false); $('#estado-qr').text(''); } else { $('#imagen-qr').removeAttr('src').prop('hidden', true); $('#estado-qr').text('El negocio todavía no configuró su QR.'); } } catch (e) { $('#imagen-qr').removeAttr('src').prop('hidden', true); fallo(e); } }
 
-    $('#pago').on('submit', async function (e) { e.preventDefault(); if (ocupado || !carrito.length) return; const metodo = $('[name=metodo]:checked').val(); if (metodo !== 'efectivo' && !$('#imagen-qr').attr('src')) return mensaje('El QR no está disponible. Solicita al administrador configurarlo.', true); ocupado = true; $('#pago input,#carrito input,#carrito button,#catalogo button').prop('disabled', true); dibujar(); $('#carrito input,#carrito button').prop('disabled', true); try { const v = await api('ventas', 'POST', { items: carrito.map(i => ({ id: i.id, cantidad: i.cantidad })), metodo, recibido: Number($('#recibido').val()) }); carrito = []; $('#recibido').val(''); mensaje(metodo !== 'efectivo' ? 'Pedido #' + v.id + ' · Efectivo: '+dinero(v.monto_efectivo)+' · QR: '+dinero(v.monto_qr)+' · Pendiente de verificar. Guarda este número de pedido.' : 'Venta #' + v.id + ' pagada. Cambio: ' + dinero(Number(v.recibido) - Number(v.total))); await cargar(); } catch (e) { fallo(e); } finally { ocupado = false; $('#pago input,#catalogo button').prop('disabled', false); catalogo(); dibujar(); } });
-    dibujar(); cargar().catch(fallo);
+    function mostrarPedido(v){
+        $('#seguimiento').prop('hidden',false);
+        $('#numero-pedido').text('Pedido #'+v.id);
+        $('#importes-pedido').text('Total: '+dinero(v.total)+' · Efectivo: '+dinero(v.monto_efectivo)+' · QR: '+dinero(v.monto_qr));
+        $('#estado-pedido').text(v.estado==='pagado'?'Pago confirmado en el sistema.':'Pedido registrado. Pago pendiente de verificación. La conexión automática con Excel todavía no está configurada.');
+        $('#verificar-pago').prop('disabled',v.estado==='pagado');
+    }
+    $('#verificar-pago').on('click',async function(){
+        if(!pedidoToken)return;
+        $(this).prop('disabled',true);
+        try{mostrarPedido(await api('pedidos/'+pedidoToken));}catch(e){fallo(e);$(this).prop('disabled',false);}
+    });
+    $('#pago').on('submit',async function(e){
+        e.preventDefault();if(ocupado||!carrito.length)return;
+        const metodo=$('[name=metodo]:checked').val();
+        if(metodo!=='efectivo'&&!$('#imagen-qr').attr('src'))return mensaje('El negocio aún no configuró su QR.',true);
+        if(!confirm('¿Confirmar este pedido por '+dinero(total())+'?'))return;
+        ocupado=true;$('#pago input,#carrito input,#carrito button,#catalogo button').prop('disabled',true);dibujar();$('#carrito input,#carrito button').prop('disabled',true);
+        try{
+            const v=await api('ventas','POST',{items:carrito.map(i=>({id:i.id,cantidad:i.cantidad})),metodo,recibido:Number($('#recibido').val())});
+            pedidoToken=v.consulta_token;try{localStorage.setItem('nexus-pedido',pedidoToken);}catch{}
+            mostrarPedido(v);carrito=[];$('#recibido').val('');mensaje('Pedido #'+v.id+' registrado. Consulta su estado en «Verificar pago».');await cargar();
+        }catch(e){fallo(e);}finally{ocupado=false;$('#pago input,#catalogo button').prop('disabled',false);catalogo();dibujar();}
+    });
+    try{pedidoToken=localStorage.getItem('nexus-pedido')||'';}catch{}
+    if(pedidoToken)api('pedidos/'+pedidoToken).then(mostrarPedido).catch(()=>{});
+    dibujar();cargar().catch(fallo);
 });

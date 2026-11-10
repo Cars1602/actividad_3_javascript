@@ -48,3 +48,7 @@ DO $$ BEGIN
  ALTER TABLE tienda.ventas ADD CONSTRAINT ventas_importes_check CHECK(monto_efectivo>=0 AND monto_qr>=0 AND monto_efectivo+monto_qr=total);
  END IF;
 END $$;
+
+-- Clave privada de consulta del pedido para el comprador.
+ALTER TABLE tienda.ventas ADD COLUMN IF NOT EXISTS consulta_token UUID NOT NULL DEFAULT gen_random_uuid();
+CREATE UNIQUE INDEX IF NOT EXISTS ventas_consulta_token_idx ON tienda.ventas(consulta_token);

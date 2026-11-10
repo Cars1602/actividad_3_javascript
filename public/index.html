@@ -57,8 +57,15 @@
                         <p id="estado-qr" role="status"></p>
                         <p class="ayuda">QR estático del negocio. Revisa el importe en tu banco y completa el pago. La
                             administración verifica el ingreso.</p>
-                    </div><button id="cobrar" class="principal">Registrar cobro</button>
+                    </div><button id="cobrar" class="principal">Confirmar pedido</button>
                 </form>
+                <section id="seguimiento" hidden aria-live="polite">
+                    <h3 id="numero-pedido"></h3>
+                    <p id="importes-pedido"></p>
+                    <p id="estado-pedido"></p>
+                    <button type="button" id="verificar-pago" class="principal">Verificar pago</button>
+                    <p class="ayuda">No vuelvas a pagar si ya transferiste. Conserva tu comprobante y solicita la verificación del administrador.</p>
+                </section>
             </aside>
         </div>
 

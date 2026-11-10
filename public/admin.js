@@ -5,7 +5,27 @@ $(function () {
     function api(path, method = 'GET', data) { return $.ajax({ url: '/api/' + path, method, contentType: 'application/json', data: data ? JSON.stringify(data) : undefined }); }
     function fallo(e) { mensaje(e.responseJSON?.error || 'No se pudo completar la operación.', true); }
     async function productos() { const datos = await api('productos'); productosAdmin=datos; $('#productos-admin').empty(); if (!datos.length) $('#productos-admin').text('Agrega tu primer videojuego usando el formulario.'); datos.forEach(p => { const fila = $('<article class="producto producto-admin">'); if (p.imagen) fila.append($('<img class="foto-producto">').attr({ src: p.imagen, alt: p.nombre })); const d = $('<div>'); d.append($('<small class="categoria">').text(p.categoria), $('<h3>').text(p.nombre), $('<p>').text(p.descripcion), $('<strong>').text(dinero(p.precio)), $('<p>').text(p.stock + ' disponibles')); fila.append(d,$('<button class="editar-producto secundario" type="button">').attr('data-id',p.id).text('Editar')).hide(); $('#productos-admin').append(fila); fila.fadeIn(180); }); }
-    async function categorias(seleccion) { const datos = await api('categorias'); const lista = $('#categoria').empty().append($('<option>').val('').text('Selecciona una categoría')); datos.forEach(c => lista.append($('<option>').val(c.nombre).text(c.nombre))); if (seleccion) lista.val(seleccion); $('#lista-categorias').text(datos.map(c => c.nombre).join(' · ')); }
+    async function categorias(seleccion) {
+        const elegida=seleccion??$('#categoria').val();
+        const datos=await api('categorias');
+        const lista=$('#categoria').empty().append($('<option>').val('').text('Selecciona una categoría'));
+        const panel=$('#lista-categorias').empty();
+        datos.forEach(c=>{
+            lista.append($('<option>').val(c.nombre).text(c.nombre));
+            const fila=$('<div class="categoria-admin">').append($('<span>').text(c.nombre));
+            if(c.nombre==='General')fila.append($('<small>').text('Predeterminada'));
+            else fila.append($('<button type="button" class="eliminar-categoria secundario">').attr({'data-id':c.id,'data-nombre':c.nombre,'aria-label':'Eliminar categoría '+c.nombre}).text('Eliminar'));
+            panel.append(fila);
+        });
+        if(elegida&&datos.some(c=>c.nombre===elegida))lista.val(elegida);
+    }
+    $('#lista-categorias').on('click','.eliminar-categoria',async function(){
+        const boton=$(this),nombre=boton.attr('data-nombre');
+        if(!confirm('¿Estás seguro de eliminar la categoría «'+nombre+'»?'))return;
+        boton.prop('disabled',true);
+        try{await api('categorias/'+boton.attr('data-id'),'DELETE');await categorias();mensaje('Categoría «'+nombre+'» eliminada.');}
+        catch(e){fallo(e);boton.prop('disabled',false);}
+    });
     $('#form-categoria').on('submit', async function (e) { e.preventDefault(); const b = $(this).find('button'); b.prop('disabled', true); try { const c = await api('categorias', 'POST', { nombre: $('#nueva-categoria').val().trim() }); this.reset(); await categorias(c.nombre); mensaje('Categoría creada. Ya puedes seleccionarla.'); } catch (e) { fallo(e); } finally { b.prop('disabled', false); } });
     let qrImagen = '';
     $('#qr-admin').on('change', function () { qrImagen = ''; const f = this.files[0]; if (!f) return; if (!['image/png', 'image/jpeg', 'image/webp'].includes(f.type) || f.size > 1500000) { this.value = ''; mensaje('Selecciona un QR PNG, JPG o WebP de hasta 1.5 MB.', true); return; } const lector = new FileReader(); $('#guardar-qr').prop('disabled', true); lector.onload = () => { qrImagen = lector.result; $('#qr-previa').attr('src', qrImagen).prop('hidden', false); $('#guardar-qr').prop('disabled', false); }; lector.onerror = () => { $('#guardar-qr').prop('disabled', false); mensaje('No se pudo leer el QR.', true); }; lector.readAsDataURL(f); });

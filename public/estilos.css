@@ -528,3 +528,5 @@ header{background:#10131deF;border-bottom:1px solid var(--linea);padding-top:24p
 #imagen-qr-demo{display:block;width:100%;max-width:300px;height:auto;background:white;border-radius:8px;margin:15px auto}
 .qr-demo p{line-height:1.5}.producto-admin .editar-producto{flex-shrink:0}
 @media(max-width:480px){.producto-admin{flex-wrap:wrap}.producto-admin .editar-producto{width:100%}}
+
+.lista-categorias{display:grid;gap:8px;margin-top:18px}.categoria-admin{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 12px;background:var(--panel);border:1px solid var(--linea);border-radius:8px}.categoria-admin span{overflow-wrap:anywhere;min-width:0}.categoria-admin small{color:var(--suave)}.categoria-admin button{font-size:12px;padding:7px 11px;color:#ffc4d1;border-color:#683045;flex-shrink:0}

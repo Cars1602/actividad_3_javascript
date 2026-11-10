@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Administración · NexusPlay</title>
-    <link rel="stylesheet" href="/estilos.css?v=20261110-5">
+    <link rel="stylesheet" href="/estilos.css?v=20261110-6">
     <script defer src="/jquery.min.js"></script>
-    <script defer src="/admin.js?v=20261110-5"></script>
+    <script defer src="/admin.js?v=20261110-6"></script>
 </head>
 
 <body>
@@ -28,7 +28,8 @@
                 <h2>Crear categoría</h2>
                 <form id="form-categoria"><label>Nombre de la categoría<input id="nueva-categoria" maxlength="60"
                             placeholder="Ej. Aventura, deportes o estrategia" required></label><button>Crear categoría</button></form>
-                <p id="lista-categorias" class="ayuda"></p>
+                <div id="lista-categorias" class="lista-categorias" aria-label="Categorías registradas"></div>
+                <p class="ayuda">Puedes eliminar categorías sin productos. General es la categoría predeterminada.</p>
             </div>
             <div>
                 <h2>Configurar QR del negocio</h2>

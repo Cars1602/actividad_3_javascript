@@ -13,7 +13,7 @@ app.disable('x-powered-by');
 // En Render la administración requiere credenciales independientes de Neon.
 function igual(a,b){return timingSafeEqual(createHash('sha256').update(a).digest(),createHash('sha256').update(b).digest());}
 app.use((req,res,next)=>{
- const privada=(req.path.startsWith('/api/productos/')&&req.method!=='GET')||req.path.startsWith('/api/admin/')||req.path==='/admin.html'||req.path==='/admin.js'||req.path==='/api/ventas'&&req.method==='GET'||req.path.endsWith('/confirmar')||['/api/productos','/api/categorias','/api/configuracion/qr'].includes(req.path)&&req.method!=='GET';
+ const privada=((req.path.startsWith('/api/productos/')||req.path.startsWith('/api/categorias/'))&&req.method!=='GET')||req.path.startsWith('/api/admin/')||req.path==='/admin.html'||req.path==='/admin.js'||req.path==='/api/ventas'&&req.method==='GET'||req.path.endsWith('/confirmar')||['/api/productos','/api/categorias','/api/configuracion/qr'].includes(req.path)&&req.method!=='GET';
  if(!privada||!process.env.ADMIN_PASSWORD)return next();
  const header=req.headers.authorization||'';
  const raw=header.startsWith('Basic ')?Buffer.from(header.slice(6),'base64').toString():'';
@@ -21,7 +21,7 @@ app.use((req,res,next)=>{
  if(corte>0&&igual(usuario,process.env.ADMIN_USER||'admin')&&igual(clave,process.env.ADMIN_PASSWORD))return next();
  res.set('WWW-Authenticate','Basic realm="NexusPlay Admin", charset="UTF-8"');res.status(401).send('Acceso de administración requerido.');
 });
-app.get('/health',async(req,res)=>{try{await pool.query('SELECT 1');res.json({estado:'ok',version:'qr-demo-edicion-3'});}catch{res.status(503).json({estado:'sin conexion'});}});
+app.get('/health',async(req,res)=>{try{await pool.query('SELECT 1');res.json({estado:'ok',version:'categorias-eliminar-4'});}catch{res.status(503).json({estado:'sin conexion'});}});
 app.use(express.json({ limit: '3mb' }));
 app.use(express.static(fileURLToPath(new URL('./public', import.meta.url))));
 let sincronizandoSheets=false;
@@ -97,6 +97,18 @@ app.post('/api/categorias', async (req, res, next) => {
     const nombre = req.body.nombre?.trim();
     if (typeof nombre !== 'string' || !nombre || nombre.length > 60) return res.status(400).json({ error: 'Escribe una categoría de hasta 60 caracteres.' });
     try { const r = await pool.query('INSERT INTO tienda.categorias(nombre) VALUES($1) ON CONFLICT DO NOTHING RETURNING *', [nombre]); if (!r.rowCount) return res.status(409).json({ error: 'La categoría ya existe.' }); res.status(201).json(r.rows[0]); } catch (e) { next(e); }
+});
+app.delete('/api/categorias/:id',async(req,res,next)=>{
+ const id=Number(req.params.id);
+ if(!Number.isSafeInteger(id)||id<1)return res.status(400).json({error:'Categoría inválida.'});
+ try{
+  const r=await pool.query("DELETE FROM tienda.categorias WHERE id=$1 AND nombre<>'General' RETURNING id,nombre",[id]);
+  if(!r.rowCount){
+   const existe=(await pool.query('SELECT 1 FROM tienda.categorias WHERE id=$1',[id])).rowCount;
+   return res.status(existe?409:404).json({error:existe?'General es la categoría predeterminada y no se puede eliminar.':'La categoría ya no existe.'});
+  }
+  res.json({eliminada:true,...r.rows[0]});
+ }catch(e){if(e.code==='23503')return res.status(409).json({error:'Esta categoría tiene productos. Edita esos productos y asígnales otra categoría antes de eliminarla.'});next(e);}
 });
 app.get('/api/configuracion', async (req, res, next) => { try { res.json((await pool.query('SELECT qr_imagen FROM tienda.configuracion WHERE id=1')).rows[0]); } catch (e) { next(e); } });
 app.put('/api/configuracion/qr', async (req, res, next) => {

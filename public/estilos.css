@@ -521,3 +521,10 @@ header{background:#10131deF;border-bottom:1px solid var(--linea);padding-top:24p
 .comprobante-confirmado h3{font-size:25px;margin:0 0 12px;color:#218638}
 .comprobante-confirmado p{margin:8px 0;line-height:1.5;font-size:14px;color:#28532e}
 @media(prefers-reduced-motion:no-preference){.pago-confirmado .check-pago{animation:aparecer-check .3s ease-out}@keyframes aparecer-check{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}}
+
+.qr-demo{padding:20px;margin-top:20px;border:1px solid #ad8950;border-radius:12px;background:#29251b}
+.etiqueta-demo{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:#ffdb8f}
+#monto-demo{display:block;font-size:28px;color:var(--acento);margin:15px 0;text-align:center}
+#imagen-qr-demo{display:block;width:100%;max-width:300px;height:auto;background:white;border-radius:8px;margin:15px auto}
+.qr-demo p{line-height:1.5}.producto-admin .editar-producto{flex-shrink:0}
+@media(max-width:480px){.producto-admin{flex-wrap:wrap}.producto-admin .editar-producto{width:100%}}

@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>NexusPlay · Carrito de compras</title>
-    <link rel="stylesheet" href="estilos.css?v=20261110-4">
+    <link rel="stylesheet" href="estilos.css?v=20261110-5">
     <script defer src="/jquery.min.js"></script>
-    <script defer src="app.js?v=20261110-4"></script>
+    <script defer src="app.js?v=20261110-5"></script>
 </head>
 
 <body>
@@ -49,7 +49,7 @@
                 <form id="pago">
                     <h3>Forma de pago</h3>
                     <div class="opciones"><label><input type="radio" name="metodo" value="efectivo" checked>
-                            Efectivo</label><label><input type="radio" name="metodo" value="qr"> QR estático</label><label><input type="radio" name="metodo" value="mixto"> Efectivo + QR</label>
+                            Efectivo</label><label><input type="radio" name="metodo" value="qr"> QR estático</label><label><input type="radio" name="metodo" value="mixto"> Efectivo + QR</label><label><input type="radio" name="metodo" value="qr_demo"> QR con monto (demo)</label>
                     </div>
                     <div id="efectivo"><label>Efectivo recibido Bs<input id="recibido" type="number" min="0" step="0.01"
                                 placeholder="0.00"></label>
@@ -63,7 +63,15 @@
                         <p id="estado-qr" role="status"></p>
                         <p class="ayuda">QR estático del negocio. Revisa el importe en tu banco y completa el pago. La
                             página confirmará cuando llegue un aviso que coincida con tu nombre, importe y pedido. Si no coincide, lo revisará la administración.</p>
-                    </div><button id="cobrar" class="principal">Confirmar pago</button>
+                    </div>
+                    <section id="qr-demo" class="qr-demo" hidden>
+                        <span class="etiqueta-demo">DEMOSTRACIÓN · NO VÁLIDO PARA PAGAR</span>
+                        <h3>QR con monto</h3><p>El importe se calcula con los productos y cantidades del carrito.</p>
+                        <strong id="monto-demo">Bs 0.00</strong>
+                        <img id="imagen-qr-demo" alt="QR de demostración con el monto del carrito" hidden>
+                        <p id="estado-demo" role="status"></p>
+                        <p class="ayuda">Al escanearlo verás el importe como texto. Esta demostración no realiza cobros ni registra una venta.</p>
+                    </section><button id="cobrar" class="principal">Confirmar pago</button>
                 </form>
                 <section id="seguimiento" hidden aria-live="polite">
                     <h3 id="numero-pedido"></h3>

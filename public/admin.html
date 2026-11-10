@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Administración · NexusPlay</title>
-    <link rel="stylesheet" href="/estilos.css">
+    <link rel="stylesheet" href="/estilos.css?v=20261110-5">
     <script defer src="/jquery.min.js"></script>
-    <script defer src="/admin.js"></script>
+    <script defer src="/admin.js?v=20261110-5"></script>
 </head>
 
 <body>
@@ -42,7 +42,7 @@
         </section>
         <div class="layout admin-layout">
             <section>
-                <h2>Agregar videojuego</h2>
+                <h2 id="titulo-producto">Agregar videojuego</h2>
                 <form id="registro-admin"><label>Título del videojuego<input id="nombre" maxlength="100"
                             placeholder="Ej. Minecraft" required></label>
                     <div class="dos"><label>Categoría<select id="categoria" required>
@@ -57,7 +57,7 @@
                     <p class="ayuda">JPG, PNG o WebP. Máximo 1.5 MB. La foto se guarda con el producto en PostgreSQL.
                     </p><img id="vista-previa" class="vista-previa" alt="Vista previa del producto" hidden>
                     <div class="acciones"><button id="guardar">Guardar videojuego</button><button type="reset"
-                            class="secundario">Limpiar</button></div>
+                            class="secundario">Limpiar</button><button type="button" id="cancelar-edicion" class="secundario" hidden>Cancelar edición</button></div>
                     <p class="ayuda">Enter guarda el formulario. Escape lo limpia.</p>
                 </form>
             </section>

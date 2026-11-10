@@ -1,3 +1,4 @@
+import QRCode from 'qrcode';
 import { sincronizarRegistros } from './sheets-sync.js';
 import { normalizarNombre, reconciliarAviso } from './pagos-yape.js';
 import { timingSafeEqual, createHash } from 'node:crypto';
@@ -12,7 +13,7 @@ app.disable('x-powered-by');
 // En Render la administración requiere credenciales independientes de Neon.
 function igual(a,b){return timingSafeEqual(createHash('sha256').update(a).digest(),createHash('sha256').update(b).digest());}
 app.use((req,res,next)=>{
- const privada=req.path.startsWith('/api/admin/')||req.path==='/admin.html'||req.path==='/admin.js'||req.path==='/api/ventas'&&req.method==='GET'||req.path.endsWith('/confirmar')||['/api/productos','/api/categorias','/api/configuracion/qr'].includes(req.path)&&req.method!=='GET';
+ const privada=(req.path.startsWith('/api/productos/')&&req.method!=='GET')||req.path.startsWith('/api/admin/')||req.path==='/admin.html'||req.path==='/admin.js'||req.path==='/api/ventas'&&req.method==='GET'||req.path.endsWith('/confirmar')||['/api/productos','/api/categorias','/api/configuracion/qr'].includes(req.path)&&req.method!=='GET';
  if(!privada||!process.env.ADMIN_PASSWORD)return next();
  const header=req.headers.authorization||'';
  const raw=header.startsWith('Basic ')?Buffer.from(header.slice(6),'base64').toString():'';
@@ -20,7 +21,7 @@ app.use((req,res,next)=>{
  if(corte>0&&igual(usuario,process.env.ADMIN_USER||'admin')&&igual(clave,process.env.ADMIN_PASSWORD))return next();
  res.set('WWW-Authenticate','Basic realm="NexusPlay Admin", charset="UTF-8"');res.status(401).send('Acceso de administración requerido.');
 });
-app.get('/health',async(req,res)=>{try{await pool.query('SELECT 1');res.json({estado:'ok',version:'ventas-sheets-auto-2'});}catch{res.status(503).json({estado:'sin conexion'});}});
+app.get('/health',async(req,res)=>{try{await pool.query('SELECT 1');res.json({estado:'ok',version:'qr-demo-edicion-3'});}catch{res.status(503).json({estado:'sin conexion'});}});
 app.use(express.json({ limit: '3mb' }));
 app.use(express.static(fileURLToPath(new URL('./public', import.meta.url))));
 let sincronizandoSheets=false;
@@ -108,6 +109,39 @@ app.post('/api/productos', async (req, res, next) => {
     if (typeof descripcion !== "string" || descripcion.length > 500 || typeof categoria !== "string" || categoria.length > 60 || typeof imagen !== "string" || imagen.length > 2100000 || (imagen && !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(imagen))) return res.status(400).json({ error: "Descripción, categoría o imagen inválida (máximo 1.5 MB)." });
     if (typeof nombre !== 'string' || !nombre.trim() || nombre.length > 100 || !Number.isFinite(precio) || precio <= 0 || precio >= 100000000 || Math.abs(precio * 100 - Math.round(precio * 100)) > .001 || !Number.isInteger(stock) || stock < 0 || stock > 1000000) return res.status(400).json({ error: 'Revisa nombre, precio y existencias.' });
     try { if (!(await pool.query('SELECT 1 FROM tienda.categorias WHERE nombre=$1', [categoria.trim()])).rowCount) return res.status(400).json({ error: 'Selecciona una categoría registrada.' }); res.status(201).json((await pool.query('INSERT INTO tienda.productos(nombre,precio,stock,descripcion,categoria,imagen) VALUES($1,$2,$3,$4,$5,$6) RETURNING *', [nombre.trim(), precio, stock, descripcion.trim(), categoria.trim() || "General", imagen])).rows[0]); } catch (e) { next(e); }
+});
+// El QR de prueba solo contiene una descripción del importe. No cobra ni crea ventas.
+app.post('/api/qr-demostracion',async(req,res,next)=>{
+ const {items}=req.body||{};
+ if(!Array.isArray(items)||!items.length||items.length>100)return res.status(400).json({error:'Agrega productos para generar el QR de demostración.'});
+ const ids=new Set();
+ for(const i of items){if(!Number.isSafeInteger(i.id)||i.id<1||ids.has(i.id)||!Number.isSafeInteger(i.cantidad)||i.cantidad<1||i.cantidad>1000000)return res.status(400).json({error:'Cantidades inválidas.'});ids.add(i.id);}
+ try{
+  const productos=(await pool.query('SELECT id,precio FROM tienda.productos WHERE id=ANY($1::integer[])',[[...ids]])).rows;
+  if(productos.length!==items.length)return res.status(400).json({error:'Actualiza el catálogo; algún producto ya no está disponible.'});
+  const precios=new Map(productos.map(p=>[p.id,Math.round(Number(p.precio)*100)]));
+  const centavos=items.reduce((n,i)=>n+precios.get(i.id)*i.cantidad,0);
+  if(!Number.isSafeInteger(centavos)||centavos<=0||centavos>99999999999999)return res.status(400).json({error:'Importe de demostración inválido.'});
+  const total=centavos/100;
+  const contenido='NEXUSPLAY - DEMOSTRACION\nNO VALIDO PARA PAGAR\nMONEDA: BOB\nIMPORTE: Bs '+total.toFixed(2);
+  const imagen=await QRCode.toDataURL(contenido,{width:300,margin:4,errorCorrectionLevel:'M'});
+  res.json({demostracion:true,total,moneda:'BOB',contenido,imagen});
+ }catch(e){next(e);}
+});
+app.put('/api/productos/:id',async(req,res,next)=>{
+ const id=Number(req.params.id);
+ const {nombre,precio,stock,descripcion='',categoria,imagen}=req.body||{};
+ if(!Number.isSafeInteger(id)||id<1||typeof nombre!=='string'||!nombre.trim()||nombre.length>100||
+  typeof descripcion!=='string'||descripcion.length>500||typeof categoria!=='string'||!categoria.trim()||categoria.length>60||
+  !Number.isFinite(precio)||precio<=0||precio>=100000000||Math.abs(precio*100-Math.round(precio*100))>.001||
+  !Number.isInteger(stock)||stock<0||stock>1000000||(imagen!==undefined&&imagen!==''&&!imagenValida(imagen)))
+  return res.status(400).json({error:'Revisa el nombre, categoría, precio, cantidad e imagen del producto.'});
+ try{
+  if(!(await pool.query('SELECT 1 FROM tienda.categorias WHERE nombre=$1',[categoria.trim()])).rowCount)return res.status(400).json({error:'Selecciona una categoría registrada.'});
+  const r=await pool.query(`UPDATE tienda.productos SET nombre=$1,descripcion=$2,categoria=$3,precio=$4,stock=$5,imagen=COALESCE($6,imagen) WHERE id=$7 RETURNING *`,[nombre.trim(),descripcion.trim(),categoria.trim(),precio,stock,imagen??null,id]);
+  if(!r.rowCount)return res.status(404).json({error:'Producto no encontrado.'});
+  res.json(r.rows[0]);
+ }catch(e){next(e);}
 });
 // Consulta de estado con clave aleatoria, sin exponer ventas de otros compradores.
 app.get('/api/pedidos/:token',async(req,res,next)=>{

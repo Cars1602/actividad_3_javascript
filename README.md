@@ -26,3 +26,12 @@ Validación: `node --env-file-if-exists=.env verificar-autopago.mjs`. Usa datos 
 
 
 El servidor reintenta cada 8 segundos la asociación de avisos pendientes compatibles con pedidos recientes, sin pulsar Confirmar en administración.
+
+
+## QR con monto de demostración y edición
+
+La tienda mantiene el QR estático bancario y agrega la opción `QR con monto (demo)`. El servidor calcula el importe desde los productos del carrito y genera un QR de texto, marcado como NO VÁLIDO PARA PAGAR. No realiza cobros, crea ventas, confirma pagos ni descuenta inventario.
+
+En administración, el botón Editar de cada producto carga nombre, categoría, precio, descripción, cantidad e imagen. Guardar cambios actualiza el producto existente; no exige subir la foto otra vez. Cancelar edición vuelve al alta. La ruta PUT /api/productos/:id requiere las credenciales de administración en producción.
+
+Prueba: `node --env-file-if-exists=.env verificar-qr-edicion.mjs`. Crea un producto temporal de prueba, comprueba edición y generación de QR, y elimina exclusivamente ese producto al terminar.

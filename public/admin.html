@@ -70,12 +70,19 @@
         </div>
         <section class="historial">
             <div class="titulo">
-                <h2>Ventas y pagos</h2><button id="actualizar-ventas" class="secundario">Actualizar</button>
+                <h2>Historial de ventas</h2><button id="actualizar-ventas" class="secundario">Actualizar</button>
             </div>
             <p>Comprueba el ingreso en el banco antes de confirmar un pago QR.</p>
-            <div id="ventas-admin"></div>
+            <form id="filtros-ventas" class="filtros-ventas">
+ <label>Desde<input id="ventas-desde" type="date"></label><label>Hasta<input id="ventas-hasta" type="date"></label>
+ <label>Estado<select id="ventas-estado"><option value="">Todos</option><option value="pagado">Pagadas</option><option value="pendiente">Pendientes</option></select></label>
+ <label>Forma de pago<select id="ventas-metodo"><option value="">Todas</option><option value="efectivo">Efectivo</option><option value="qr">QR</option><option value="mixto">Efectivo + QR</option></select></label>
+ <div class="acciones"><button>Filtrar</button><button type="reset" class="secundario">Limpiar filtros</button></div></form>
+ <p class="ayuda">Fechas en horario de Bolivia. Los totales incluyen todos los resultados del filtro.</p>
+ <div id="resumen-ventas" class="resumen-ventas" role="status"></div><div id="ventas-admin" aria-live="polite"></div>
+ <nav class="paginacion-ventas" aria-label="Páginas del historial"><button id="ventas-anterior" class="secundario" disabled>Anterior</button><span id="ventas-pagina">Página 1 de 1</span><button id="ventas-siguiente" class="secundario" disabled>Siguiente</button></nav>
         </section>
-        <section class="historial"><div class="titulo"><h2>Avisos Yape del teléfono</h2><button id="actualizar-yape" class="secundario">Actualizar avisos</button><a class="enlace secundario" href="/api/admin/yape/excel.csv">Descargar para Excel</a></div><p>Relaciona el aviso con un pedido solo después de comprobar importe, moneda y abono en el banco. Para pagos mixtos, verifica también el efectivo.</p><div id="avisos-yape"></div></section><footer>NexusPlay · Administración de videojuegos</footer>
+        <section class="historial"><div class="titulo"><h2>Avisos Yape del teléfono</h2><button id="actualizar-yape" class="secundario">Actualizar avisos</button><a class="enlace secundario" href="/api/admin/yape/excel.csv">Descargar para Excel</a><button id="sincronizar-sheets" class="secundario">Sincronizar Google Sheets</button></div><p>Relaciona el aviso con un pedido solo después de comprobar importe, moneda y abono en el banco. Para pagos mixtos, verifica también el efectivo.</p><div id="avisos-yape"></div></section><footer>NexusPlay · Administración de videojuegos</footer>
     </main>
 </body>
 

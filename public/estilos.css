@@ -501,3 +501,10 @@ header{background:#10131deF;border-bottom:1px solid var(--linea);padding-top:24p
 .opciones{flex-wrap:wrap;gap:10px 20px}#resumen-saldo{color:var(--acento);font-size:17px}
 
 #seguimiento{margin-top:24px;padding-top:20px;border-top:1px solid var(--linea)}#estado-pedido{line-height:1.6;color:var(--acento)}
+
+/* Historial de ventas */
+.filtros-ventas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;align-items:end}.filtros-ventas .acciones{grid-column:1/-1}.filtros-ventas label{margin:0}
+.resumen-ventas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:24px 0}.resumen-ventas>div{background:var(--panel);border:1px solid var(--linea);border-radius:10px;padding:20px}.resumen-ventas span{display:block;color:var(--suave);font-size:14px;margin-bottom:8px}.resumen-ventas strong{font-size:24px;color:var(--acento)}
+.estado-venta{display:inline-block;margin-left:12px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700}.estado-venta.pagada{background:#253420;color:#d5f6b9}.estado-venta.pendiente{background:#3d3019;color:#ffdb8f}
+.paginacion-ventas{display:flex;justify-content:center;align-items:center;gap:18px;margin-top:24px}#ventas-admin .venta{align-items:flex-start}#ventas-admin .venta>div{min-width:0}#ventas-admin .venta p{overflow-wrap:anywhere}
+@media(max-width:760px){.filtros-ventas{grid-template-columns:repeat(2,minmax(0,1fr))}.resumen-ventas{grid-template-columns:1fr}#ventas-admin .venta{flex-direction:column}.estado-venta{margin:8px 0 0 10px}.paginacion-ventas{gap:10px;font-size:13px}}

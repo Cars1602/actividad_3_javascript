@@ -63,3 +63,5 @@ CREATE TABLE IF NOT EXISTS tienda.notificaciones_yape (
  pedido_id INTEGER UNIQUE REFERENCES tienda.ventas(id),
  registrado_en TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE tienda.notificaciones_yape ADD COLUMN IF NOT EXISTS sheets_sincronizado_en TIMESTAMPTZ;

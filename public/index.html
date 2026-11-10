@@ -45,11 +45,11 @@
                 <form id="pago">
                     <h3>Forma de pago</h3>
                     <div class="opciones"><label><input type="radio" name="metodo" value="efectivo" checked>
-                            Efectivo</label><label><input type="radio" name="metodo" value="qr"> QR estático</label>
+                            Efectivo</label><label><input type="radio" name="metodo" value="qr"> QR estático</label><label><input type="radio" name="metodo" value="mixto"> Efectivo + QR</label>
                     </div>
                     <div id="efectivo"><label>Efectivo recibido Bs<input id="recibido" type="number" min="0" step="0.01"
                                 placeholder="0.00"></label>
-                        <p>Cambio: <strong id="cambio">Bs 0.00</strong></p>
+                        <p id="resumen-saldo" hidden>Saldo a pagar por QR: <strong id="saldo-qr">Bs 0.00</strong></p><p id="resumen-cambio">Cambio: <strong id="cambio">Bs 0.00</strong></p>
                     </div>
                     <div id="qr" hidden>
                         <p>Escanea el QR del negocio y verifica el importe antes de pagar.</p><img id="imagen-qr"

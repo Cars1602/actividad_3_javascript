@@ -44,8 +44,8 @@ app.get('/api/ventas', async (req, res, next) => { try { res.json((await pool.qu
 // La transacción bloquea existencias y calcula el total con precios del servidor.
 app.post('/api/ventas', async (req, res, next) => {
     const { items, metodo, recibido } = req.body;
-    if (!['efectivo', 'qr'].includes(metodo) || !Array.isArray(items) || !items.length || items.length > 100) return res.status(400).json({ error: 'Carrito o método inválido.' });
-    if (metodo === 'qr' && !(await pool.query("SELECT 1 FROM tienda.configuracion WHERE id=1 AND qr_imagen<>''")).rowCount) return res.status(400).json({ error: 'El negocio aún no configuró su QR.' });
+    if (!['efectivo', 'qr', 'mixto'].includes(metodo) || !Array.isArray(items) || !items.length || items.length > 100) return res.status(400).json({ error: 'Carrito o método inválido.' });
+    if (metodo !== 'efectivo' && !(await pool.query("SELECT 1 FROM tienda.configuracion WHERE id=1 AND qr_imagen<>''")).rowCount) return res.status(400).json({ error: 'El negocio aún no configuró su QR.' });
     const ids = new Set();
     for (const i of items) { if (!Number.isSafeInteger(i.id) || i.id < 1 || ids.has(i.id) || !Number.isInteger(i.cantidad) || i.cantidad < 1 || i.cantidad > 1000000) return res.status(400).json({ error: 'Cantidades inválidas.' }); ids.add(i.id); }
     let c;
@@ -60,14 +60,17 @@ app.post('/api/ventas', async (req, res, next) => {
         }
         const total = centavos / 100;
         if (metodo === 'efectivo' && (!Number.isFinite(recibido) || recibido < total || recibido > 999999999999 || Math.abs(recibido * 100 - Math.round(recibido * 100)) > .001)) throw new Error('El efectivo debe cubrir el total y admitir máximo dos decimales.');
+        if(metodo==='mixto'&&(!Number.isFinite(recibido)||recibido<=0||recibido>=total||Math.abs(recibido*100-Math.round(recibido*100))>.001))throw new Error('El efectivo del pago mixto debe ser mayor que cero y menor que el total.');
+        const efectivo=metodo==='efectivo'?total:metodo==='mixto'?Math.round(recibido*100)/100:0;
+        const saldoQr=(centavos-Math.round(efectivo*100))/100;
         for (const i of items) await c.query('UPDATE tienda.productos SET stock=stock-$1 WHERE id=$2', [i.cantidad, i.id]);
-        const venta = (await c.query('INSERT INTO tienda.ventas(metodo,total,recibido,estado,detalle) VALUES($1,$2,$3,$4,$5) RETURNING *', [metodo, total, metodo === 'efectivo' ? recibido : null, metodo === 'efectivo' ? 'pagado' : 'pendiente', JSON.stringify(detalle)])).rows[0];
+        const venta = (await c.query('INSERT INTO tienda.ventas(metodo,total,recibido,estado,detalle,monto_efectivo,monto_qr) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *', [metodo, total, metodo !== 'qr' ? recibido : null, metodo === 'efectivo' ? 'pagado' : 'pendiente', JSON.stringify(detalle),efectivo,saldoQr])).rows[0];
         await c.query('COMMIT'); res.status(201).json(venta);
     } catch (e) { if (c) await c.query('ROLLBACK'); if (e instanceof Error && ['Existencias', 'Total', 'El efectivo'].some(x => e.message.startsWith(x))) res.status(400).json({ error: e.message }); else next(e); } finally { c?.release(); }
 });
 app.post('/api/ventas/:id/confirmar', async (req, res, next) => {
     if (!/^\d+$/.test(req.params.id)) return res.sendStatus(400);
-    try { const r = await pool.query("UPDATE tienda.ventas SET estado='pagado' WHERE id=$1 AND metodo='qr' AND estado='pendiente' RETURNING *", [req.params.id]); if (!r.rowCount) return res.status(404).json({ error: 'Venta pendiente no encontrada.' }); res.json(r.rows[0]); } catch (e) { next(e); }
+    try { const r = await pool.query("UPDATE tienda.ventas SET estado='pagado' WHERE id=$1 AND metodo IN ('qr','mixto') AND estado='pendiente' RETURNING *", [req.params.id]); if (!r.rowCount) return res.status(404).json({ error: 'Venta pendiente no encontrada.' }); res.json(r.rows[0]); } catch (e) { next(e); }
 });
 app.use((err, req, res, next) => { console.error('Error de servicio:', err.code || 'desconocido'); res.status(503).json({ error: 'No se pudo completar la operación. Revisa la conexión con PostgreSQL.' }); });
 try { if(process.env.NODE_ENV==='production'&&!process.env.ADMIN_PASSWORD)throw new Error('Configura ADMIN_PASSWORD'); if (!process.env.DATABASE_URL) throw new Error('Falta DATABASE_URL'); await pool.query(await readFile(new URL('./schema.sql', import.meta.url), 'utf8')); await pool.query(await readFile(new URL('./migracion.sql', import.meta.url), 'utf8')); app.listen(process.env.PORT || 3001, '0.0.0.0', () => console.log('NexusPlay iniciado en puerto ' + (process.env.PORT || 3001))); } catch (e) { console.error('No se pudo iniciar. Configura DATABASE_URL y revisa Neon.', e.code || ''); await pool.end(); process.exitCode = 1; }

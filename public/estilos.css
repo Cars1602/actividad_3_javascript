@@ -515,3 +515,9 @@ header{background:#10131deF;border-bottom:1px solid var(--linea);padding-top:24p
 .aviso-pago h2{font-size:26px;margin:0 0 10px}.aviso-pago p{margin:0;line-height:1.6}
 .aviso-pago.pago-completo{border-color:var(--acento);background:#253420;color:#d5f6b9}
 #seguimiento.pago-confirmado{padding:20px;border:1px solid var(--acento);border-radius:10px;background:#253420}
+
+.comprobante-confirmado{text-align:center;padding:26px 18px;margin:20px 0;border:1px solid #5bbb55;border-radius:16px;background:#eefde9;color:#204a25}
+.comprobante-confirmado .check-pago{display:block;width:116px;height:116px;margin:0 auto 16px}
+.comprobante-confirmado h3{font-size:25px;margin:0 0 12px;color:#218638}
+.comprobante-confirmado p{margin:8px 0;line-height:1.5;font-size:14px;color:#28532e}
+@media(prefers-reduced-motion:no-preference){.pago-confirmado .check-pago{animation:aparecer-check .3s ease-out}@keyframes aparecer-check{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}}

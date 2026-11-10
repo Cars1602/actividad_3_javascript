@@ -49,7 +49,7 @@ $(function () {
         $('#efectivo').prop('hidden', this.value === 'qr'); $('#qr').prop('hidden', !qr);
         $('#nombre-pagador').prop('required', qr);
         $('#recibido').prop('required', this.value !== 'qr'); $('#resumen-saldo').prop('hidden', !mixto);
-        $('#resumen-cambio').prop('hidden', mixto); $('#cobrar').text('Confirmar pedido');
+        $('#resumen-cambio').prop('hidden', mixto); $('#cobrar').text('Confirmar pago');
         cambio(); if (qr) cargarQR();
     });
     $('#recibido').prop('required', true).on('input', cambio);
@@ -60,6 +60,7 @@ $(function () {
         if (!pedidoToken || consultandoPago) return;
         const clave = pedidoToken;
         consultandoPago = true; clearTimeout(temporizadorPago);
+        $('#verificar-pago').prop('disabled',true).text('Actualizando…');
         try {
             const pedido = await api('pedidos/' + clave);
             if (pedidoToken === clave) mostrarPedido(pedido);
@@ -69,7 +70,7 @@ $(function () {
                 $('#estado-consulta').text('Reconectando… Tu pedido sigue guardado. No vuelvas a pagar.');
                 temporizadorPago = setTimeout(() => consultarPago(),15000);
             }
-        } finally { consultandoPago = false; }
+        } finally { consultandoPago = false; $('#verificar-pago').prop('disabled',false).text('Actualizar pago'); }
     }
     function mostrarPedido(v) {
         const pagado = v.estado === 'pagado', qrRecibido = Boolean(v.qr_verificado);
@@ -78,7 +79,9 @@ $(function () {
         $('#importes-pedido').text('Total: ' + dinero(v.total) + ' · Efectivo: ' + dinero(v.monto_efectivo) + ' · QR: ' + dinero(v.monto_qr));
         $('#estado-pedido').text(pagado ? '¡Pago confirmado! Tu pedido está pagado.' : qrRecibido ? 'Llegó tu pago QR. Falta confirmar la entrega del efectivo.' : 'Esperando el aviso de tu pago QR. La pantalla se actualizará cuando se confirme.');
         $('#estado-consulta').text(pagado ? 'Confirmación recibida del servidor.' : 'Verificación automática cada 8 segundos. Si ya pagaste, no vuelvas a transferir.');
-        $('#verificar-pago').prop('disabled',pagado).text(pagado ? 'Pago confirmado' : 'Consultar ahora');
+        $('#verificar-pago').prop('disabled',false).text('Actualizar pago');
+        $('#comprobante-confirmado').prop('hidden',!pagado);
+        $('#detalle-confirmacion').text('Pedido #' + v.id + ' · Total pagado: ' + dinero(v.total));
         $('#aviso-pago').prop('hidden',!pagado && !qrRecibido).toggleClass('pago-completo',pagado);
         $('#aviso-pago-titulo').text(pagado ? '✓ Pago confirmado' : 'QR recibido · Efectivo pendiente');
         $('#aviso-pago-detalle').text('Pedido #' + v.id + ' · ' + (pagado ? dinero(v.total) + ' pagados.' : dinero(v.monto_qr) + ' recibidos por QR.'));
@@ -90,12 +93,12 @@ $(function () {
         e.preventDefault(); if (ocupado || !carrito.length) return;
         const metodo = $('[name=metodo]:checked').val();
         if (metodo !== 'efectivo' && !$('#imagen-qr').attr('src')) return mensaje('El negocio aún no configuró su QR.', true);
-        if (!confirm('¿Confirmar este pedido por ' + dinero(total()) + '?')) return;
+        if (!confirm('¿Registrar este pago por ' + dinero(total()) + ' para su verificación?')) return;
         ocupado = true; $('#pago input,#carrito input,#carrito button,#catalogo button').prop('disabled', true); dibujar(); $('#carrito input,#carrito button').prop('disabled', true);
         try {
             const v = await api('ventas', 'POST', { items: carrito.map(i => ({ id: i.id, cantidad: i.cantidad })), metodo, recibido: Number($('#recibido').val()), nombre_pagador: $('#nombre-pagador').val().trim() });
             pedidoToken = v.consulta_token; try { localStorage.setItem('nexus-pedido', pedidoToken); } catch { }
-            mostrarPedido(v); carrito = []; $('#recibido').val(''); mensaje('Pedido #' + v.id + ' registrado. Consulta su estado en «Verificar pago».'); await cargar();
+            mostrarPedido(v); carrito = []; $('#recibido').val(''); mensaje('Pedido #' + v.id + ' registrado. Consulta el resultado en «Actualizar pago».'); await cargar();
         } catch (e) { fallo(e); } finally { ocupado = false; $('#pago input,#catalogo button').prop('disabled', false); catalogo(); dibujar(); }
     });
     try { pedidoToken = localStorage.getItem('nexus-pedido') || ''; } catch { }

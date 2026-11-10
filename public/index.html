@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>NexusPlay · Carrito de compras</title>
-    <link rel="stylesheet" href="estilos.css?v=20261110-3">
+    <link rel="stylesheet" href="estilos.css?v=20261110-4">
     <script defer src="/jquery.min.js"></script>
-    <script defer src="app.js?v=20261110-3"></script>
+    <script defer src="app.js?v=20261110-4"></script>
 </head>
 
 <body>
@@ -57,19 +57,28 @@
                     </div>
                     <div id="qr" hidden>
                         <label>Nombre completo del titular que pagará por QR<input id="nombre-pagador" maxlength="150" autocomplete="name" placeholder="Como aparece en Yape"></label>
-                        <p>Primero confirma el pedido. Después paga el importe exacto con el QR.</p><img id="imagen-qr"
+                        <p>Pulsa Confirmar pago para registrar tu compra. Después transfiere el importe exacto con el QR y espera la confirmación aquí.</p><img id="imagen-qr"
                             alt="QR bancario del negocio" hidden>
                         <p id="estado-qr" role="status"></p>
                         <p class="ayuda">QR estático del negocio. Revisa el importe en tu banco y completa el pago. La
                             página confirmará cuando llegue un aviso que coincida con tu nombre, importe y pedido. Si no coincide, lo revisará la administración.</p>
-                    </div><button id="cobrar" class="principal">Confirmar pedido</button>
+                    </div><button id="cobrar" class="principal">Confirmar pago</button>
                 </form>
                 <section id="seguimiento" hidden aria-live="polite">
                     <h3 id="numero-pedido"></h3>
                     <p id="importes-pedido"></p>
                     <p id="estado-pedido"></p>
                     <p id="estado-consulta" class="ayuda"></p>
-                    <button type="button" id="verificar-pago" class="principal">Verificar pago</button>
+                    <div id="comprobante-confirmado" class="comprobante-confirmado" hidden>
+                        <svg class="check-pago" viewBox="0 0 120 120" role="img" aria-label="Pago confirmado">
+                            <defs><linearGradient id="verde-check" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b7f870"/><stop offset="1" stop-color="#219b31"/></linearGradient></defs>
+                            <circle cx="60" cy="60" r="53" fill="#eefde9" stroke="url(#verde-check)" stroke-width="8"/>
+                            <path d="M30 60 51 81 91 39" fill="none" stroke="url(#verde-check)" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <h3>¡Pago recibido!</h3><p id="detalle-confirmacion"></p>
+                        <p>Tu compra quedó registrada como pagada.</p>
+                    </div>
+                    <button type="button" id="verificar-pago" class="principal">Actualizar pago</button>
                     <p class="ayuda">El estado se actualiza automáticamente. No vuelvas a pagar si ya transferiste. Conserva tu comprobante para cualquier revisión.</p>
                 </section>
             </aside>

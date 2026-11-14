@@ -909,3 +909,31 @@ main > #seguimiento .comprobante-confirmado { max-width:640px; margin:18px auto;
 main > #seguimiento .check-pago { width:88px; height:88px; }
 main > #seguimiento #verificar-pago { max-width:360px; }
 @media(max-width:600px) { main > #seguimiento {padding:16px;} }
+
+/* Confirmación debajo de la compra, compacta y coherente con la tienda. */
+main > #seguimiento {
+    display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,.85fr);
+    gap:12px 36px; align-items:start; margin:32px 0 40px; padding:28px;
+    background:#141b25; border:1px solid #394d30; border-radius:16px;
+}
+main > #seguimiento[hidden] { display:none; }
+main > #seguimiento > h3 {grid-column:1; margin:0; font-size:22px;}
+main > #seguimiento > .progreso-pago {grid-column:1; margin:12px 0 8px;}
+main > #seguimiento > p {grid-column:1; margin:0; line-height:1.6;}
+main > #seguimiento #estado-pedido {font-weight:700; color:#b5ff47;}
+main > #seguimiento .comprobante-confirmado {
+    grid-column:2; grid-row:1 / span 6; width:100%; max-width:none; margin:0;
+    padding:24px; background:#1e2c20; border:1px solid #526a3b;
+    border-radius:12px; text-align:center; color:#e9f3e6;
+}
+main > #seguimiento .comprobante-confirmado h3 {font-size:24px; color:#b5ff47; margin:12px 0;}
+main > #seguimiento .comprobante-confirmado p {font-size:14px; line-height:1.6;}
+main > #seguimiento .check-pago {width:64px;height:64px;}
+main > #seguimiento #verificar-pago {grid-column:1; width:auto; max-width:240px; margin-top:8px; padding:11px 18px;}
+main > #seguimiento > .ayuda:last-child {grid-column:1 / -1; border-top:1px solid #344033; padding-top:16px; margin-top:4px; font-size:12px;}
+@media(max-width:700px) {
+    main > #seguimiento {grid-template-columns:minmax(0,1fr);gap:14px;margin-top:24px;padding:20px 16px;}
+    main > #seguimiento .comprobante-confirmado {grid-column:1;grid-row:auto;padding:20px 16px;}
+    main > #seguimiento > .ayuda:last-child {grid-column:1;}
+    main > #seguimiento #verificar-pago {max-width:none;width:100%;}
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "ruta": "/health",
+    "estado": 200,
+    "tipo": "application/json; charset=utf-8",
+    "fecha": "2026-11-13T20:46:32.1071473-04:00"
+  },
+  {
+    "ruta": "/api/productos",
+    "estado": 200,
+    "tipo": "application/json; charset=utf-8",
+    "fecha": "2026-11-13T20:46:32.8458760-04:00"
+  },
+  {
+    "ruta": "/api/categorias",
+    "estado": 200,
+    "tipo": "application/json; charset=utf-8",
+    "fecha": "2026-11-13T20:46:33.1932550-04:00"
+  },
+  {
+    "ruta": "/api/pedidos/no-valido",
+    "estado": 400,
+    "tipo": "application/json; charset=utf-8",
+    "fecha": "2026-11-13T20:46:33.4911336-04:00"
+  },
+  {
+    "ruta": "/api/admin/ventas/historial",
+    "estado": 401,
+    "tipo": "text/html; charset=utf-8",
+    "fecha": "2026-11-13T20:46:33.8014723-04:00"
+  }
+]

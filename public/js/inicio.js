@@ -223,6 +223,7 @@ $(function () {
             }
         } finally { consultandoPago = false; $('#verificar-pago').prop('disabled',false).text('Actualizar pago'); }
     }
+    let confirmacionMostrada = null;
     function mostrarPedido(v) {
         const pagado = v.estado === 'pagado', qrRecibido = Boolean(v.qr_verificado);
         $('#progreso-pago li').removeClass('completado actual').removeAttr('aria-current');
@@ -239,9 +240,18 @@ $(function () {
         $('#comprobante-confirmado').prop('hidden',!pagado);
         $('#ver-factura').prop('hidden', !pagado || !pedidoToken).attr('href', pagado && pedidoToken ? '/factura.html#' + encodeURIComponent(pedidoToken) : null);
         $('#detalle-confirmacion').text('Pedido #' + v.id + ' · Total pagado: ' + dinero(v.total));
-        $('#aviso-pago').prop('hidden',$('[name=metodo]:checked').val()==='qr_demo'||(!pagado && !qrRecibido)).toggleClass('pago-completo',pagado);
+        $('#aviso-pago').prop('hidden',pagado || $('[name=metodo]:checked').val()==='qr_demo'||!qrRecibido).toggleClass('pago-completo',pagado);
         $('#aviso-pago-titulo').text(pagado ? '✓ Pago confirmado' : 'QR recibido · Efectivo pendiente');
         $('#aviso-pago-detalle').text('Pedido #' + v.id + ' · ' + (pagado ? dinero(v.total) + ' pagados.' : dinero(v.monto_qr) + ' recibidos por QR.'));
+        if (pagado && confirmacionMostrada !== v.id) {
+            confirmacionMostrada = v.id;
+            const carritoMovil = document.getElementById('carrito-movil');
+            if (carritoMovil.open) carritoMovil.close();
+            const resultado = document.getElementById('seguimiento');
+            resultado.setAttribute('tabindex', '-1');
+            resultado.focus({preventScroll:true});
+            resultado.scrollIntoView({behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block:'start'});
+        }
         clearTimeout(temporizadorPago);
         if (!pagado || (v.cliente_email && !v.correo_enviado_en)) temporizadorPago = setTimeout(() => consultarPago(),8000);
     }

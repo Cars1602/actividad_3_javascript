@@ -5,12 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>NexusPlay · Carrito de compras</title>
-    <link rel="stylesheet" href="estilos.css?v=20261110-7">
-    <script defer src="/jquery.min.js"></script>
-    <script defer src="app.js?v=20261110-7"></script>
+    <link rel="stylesheet" href="estilos.css?v=20261113-2">
+    <script defer src="/js/vendor/jquery.min.js"></script>
+    <script defer src="/js/interfaz.js?v=20261113-1"></script>
+    <script defer src="/js/inicio.js?v=20261113-2"></script>
 </head>
 
-<body>
+<body class="pagina-tienda">
     <header>
         <div><span class="marca">NEXUS<span class="marca-acento">PLAY</span></span>
             <p>VIDEOJUEGOS / CATÁLOGO / CHECKOUT</p>
@@ -27,7 +28,7 @@
             <h2 id="aviso-pago-titulo"></h2><p id="aviso-pago-detalle"></p>
         </section>
         <div class="layout">
-            <section>
+            <section class="seccion-catalogo" aria-label="Catálogo de videojuegos">
                 <div class="titulo">
                     <h2>Explora los videojuegos</h2><span class="etiqueta">ELIGE TU SIGUIENTE AVENTURA</span>
                 </div>
@@ -39,21 +40,33 @@
                     <label>Ordenar por<select id="orden-productos"><option value="recientes">Más recientes</option><option value="nombre">Nombre A–Z</option><option value="precio-asc">Menor precio</option><option value="precio-desc">Mayor precio</option></select></label>
                 </div>
                 <div class="resumen-catalogo"><p id="resultado-catalogo" role="status"></p><button type="button" id="limpiar-filtros" class="secundario" hidden>Limpiar filtros</button></div>
-                <div id="catalogo"></div>
-                <p id="sin-productos">Cargando videojuegos…</p>
+                <div class="estado-inventario">
+                    <span id="estado-catalogo" role="status">Consultando inventario…</span>
+                    <time id="ultima-actualizacion"></time>
+                </div>
+                <div id="catalogo-carga" class="catalogo-carga" aria-hidden="true"><article class="tarjeta-carga"><div class="portada-carga"></div><div class="texto-carga"><span></span><span></span><span></span></div></article><article class="tarjeta-carga"><div class="portada-carga"></div><div class="texto-carga"><span></span><span></span><span></span></div></article><article class="tarjeta-carga"><div class="portada-carga"></div><div class="texto-carga"><span></span><span></span><span></span></div></article><article class="tarjeta-carga"><div class="portada-carga"></div><div class="texto-carga"><span></span><span></span><span></span></div></article></div>
+                <div id="catalogo" aria-busy="true"></div>
+                <p id="sin-productos" hidden></p>
                 <button id="reintentar-catalogo" class="secundario" hidden>Reintentar inventario</button>
             </section>
-            <aside class="panel-carrito">
-                <div class="titulo">
-                    <h2>Tu carrito</h2><span id="contador">0 unidades</span>
+            <aside id="panel-carrito" class="panel-carrito" aria-labelledby="titulo-carrito">
+                <div class="resumen-carrito">
+                    <div class="titulo">
+                        <h2 id="titulo-carrito">Tu carrito</h2><span id="contador">0 unidades</span>
+                        <button type="button" id="cerrar-carrito" class="secundario" aria-label="Cerrar carrito">Cerrar</button>
+                    </div>
+                    <div class="total"><span>Total de tu compra</span><strong id="total">Bs 0.00</strong></div>
                 </div>
+                <p id="aviso-carrito" class="aviso-carrito" role="status" hidden></p>
                 <div id="carrito"></div>
                 <p id="vacio">Tu próxima partida empieza aquí. Agrega un videojuego para armar tu compra.</p>
-                <div class="total"><span>Total</span><strong id="total">Bs 0.00</strong></div><button id="vaciar"
-                    class="secundario">Vaciar carrito</button>
+                <button id="vaciar" class="secundario">Vaciar carrito</button>
                 <form id="pago">
                     <h3>Forma de pago</h3>
-                    <div class="opciones"><label><input type="radio" name="metodo" value="efectivo" checked>
+                    <label>Nombre del comprador<input id="cliente-nombre" maxlength="150" autocomplete="name" required></label>
+<label>Correo para recibir el PDF<input id="cliente-email" type="email" maxlength="254" autocomplete="email" required></label>
+<p class="ayuda">Enviaremos el comprobante a este correo cuando se confirme el pago.</p>
+<div class="opciones"><label><input type="radio" name="metodo" value="efectivo" checked>
                             Efectivo</label><label><input type="radio" name="metodo" value="qr"> QR estático</label><label><input type="radio" name="metodo" value="mixto"> Efectivo + QR</label><label><input type="radio" name="metodo" value="qr_demo"> QR con monto (demo)</label>
                     </div>
                     <div id="efectivo"><label>Efectivo recibido Bs<input id="recibido" type="number" min="0" step="0.01"
@@ -80,6 +93,11 @@
                 </form>
                 <section id="seguimiento" hidden aria-live="polite">
                     <h3 id="numero-pedido"></h3>
+                    <ol id="progreso-pago" class="progreso-pago" aria-label="Progreso del pago">
+                        <li data-paso="registrado"><span aria-hidden="true">1</span>Pedido registrado</li>
+                        <li data-paso="esperando"><span aria-hidden="true">2</span>Esperando pago</li>
+                        <li data-paso="confirmado"><span aria-hidden="true">3</span>Pago confirmado</li>
+                    </ol>
                     <p id="importes-pedido"></p>
                     <p id="estado-pedido"></p>
                     <p id="estado-consulta" class="ayuda"></p>
@@ -91,6 +109,7 @@
                         </svg>
                         <h3>¡Pago recibido!</h3><p id="detalle-confirmacion"></p>
                         <p>Tu compra quedó registrada como pagada.</p>
+                        <a id="ver-factura" class="principal enlace-factura" target="_blank" rel="noopener noreferrer" hidden>Ver e imprimir factura</a>
                     </div>
                     <button type="button" id="verificar-pago" class="principal">Actualizar pago</button>
                     <p class="ayuda">El estado se actualiza automáticamente. No vuelvas a pagar si ya transferiste. Conserva tu comprobante para cualquier revisión.</p>
@@ -100,6 +119,11 @@
 
         <footer>NexusPlay · Videojuegos y nuevas aventuras</footer>
     </main>
+    <button type="button" id="abrir-carrito" class="barra-carrito" aria-haspopup="dialog" aria-controls="carrito-movil">
+        <span><strong>Ver carrito</strong><small id="contador-movil">0 unidades</small></span>
+        <strong id="total-movil">Bs 0.00</strong>
+    </button>
+    <dialog id="carrito-movil" class="carrito-dialog" aria-labelledby="titulo-carrito"></dialog>
 </body>
 
 </html>

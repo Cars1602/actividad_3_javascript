@@ -3,13 +3,13 @@ import {spawn} from 'node:child_process';
 import {randomBytes} from 'node:crypto';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
-const root=fileURLToPath(new URL('.',import.meta.url)).replace(/[\\/]$/,'');
+const root=fileURLToPath(new URL('..',import.meta.url)).replace(/[\\/]$/,'');
 process.loadEnvFile(root+'/.env');
 const require=createRequire(root+'/package.json'),{Pool}=require('pg'),QRCode=require('qrcode');
 const pool=new Pool({connectionString:process.env.DATABASE_URL});
 const clave=randomBytes(24).toString('hex'),base='http://localhost:3022';
 const auth={Authorization:'Basic '+Buffer.from('admin:'+clave).toString('base64'),'Content-Type':'application/json'};
-const child=spawn(process.execPath,['server.js'],{cwd:root,env:{...process.env,PORT:'3022',NODE_ENV:'production',ADMIN_USER:'admin',ADMIN_PASSWORD:clave,GOOGLE_SHEETS_URL:'',GOOGLE_SHEETS_TOKEN:''},stdio:['ignore','pipe','pipe']});
+const child=spawn(process.execPath,['js/server.js'],{cwd:root,env:{...process.env,PORT:'3022',NODE_ENV:'production',ADMIN_USER:'admin',ADMIN_PASSWORD:clave,GOOGLE_SHEETS_URL:'',GOOGLE_SHEETS_TOKEN:''},stdio:['ignore','pipe','pipe']});
 let id;
 try{
  await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('El servidor no inició')),25000);child.stdout.on('data',d=>{if(d.toString().includes('iniciado')){clearTimeout(timer);resolve();}});child.on('exit',()=>{clearTimeout(timer);reject(Error('El servidor terminó'));});});

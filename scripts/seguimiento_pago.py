@@ -1,10 +1,10 @@
 from pathlib import Path
-r=Path('C:/universidad materias/diseno web 2/actividad_3')
+r=Path(__file__).resolve().parent.parent
 p=r/'schema.sql';s=p.read_text(encoding='utf-8-sig')+'''\n-- Clave privada de consulta del pedido para el comprador.
 ALTER TABLE tienda.ventas ADD COLUMN IF NOT EXISTS consulta_token UUID NOT NULL DEFAULT gen_random_uuid();
 CREATE UNIQUE INDEX IF NOT EXISTS ventas_consulta_token_idx ON tienda.ventas(consulta_token);
 ''';p.write_text(s,encoding='utf-8')
-p=r/'server.js';s=p.read_text(encoding='utf-8-sig');idx=s.index("app.get('/api/ventas'")
+p=r/'js/server.js';s=p.read_text(encoding='utf-8-sig');idx=s.index("app.get('/api/ventas'")
 s=s[:idx]+'''// Consulta de estado con clave aleatoria, sin exponer ventas de otros compradores.
 app.get('/api/pedidos/:token',async(req,res,next)=>{
  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(req.params.token))return res.status(400).json({error:'Clave de pedido inválida.'});
@@ -21,7 +21,7 @@ s=s.replace('</form>\n            </aside>','''</form>
                     <p class="ayuda">No vuelvas a pagar si ya transferiste. Conserva tu comprobante y solicita la verificación del administrador.</p>
                 </section>
             </aside>''');p.write_text(s,encoding='utf-8')
-p=r/'public/app.js';s=p.read_text(encoding='utf-8-sig').replace("$('#cobrar').text(qr?'Registrar pedido pendiente':'Registrar cobro');", "$('#cobrar').text('Confirmar pedido');")
+p=r/'public/js/inicio.js';s=p.read_text(encoding='utf-8-sig').replace("$('#cobrar').text(qr?'Registrar pedido pendiente':'Registrar cobro');", "$('#cobrar').text('Confirmar pedido');")
 s=s.replace("let productos = [], carrito = [], ocupado = false;", "let productos = [], carrito = [], ocupado = false, pedidoToken='';")
 a=s.index("    $('#pago').on('submit'")
 s=s[:a]+'''    function mostrarPedido(v){

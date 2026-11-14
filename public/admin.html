@@ -5,12 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Administración · NexusPlay</title>
-    <link rel="stylesheet" href="/estilos.css?v=20261110-6">
-    <script defer src="/jquery.min.js"></script>
-    <script defer src="/admin.js?v=20261110-6"></script>
+    <link rel="stylesheet" href="/estilos.css?v=20261113-1">
+    <script defer src="/js/vendor/jquery.min.js"></script>
+    <script defer src="/js/interfaz.js?v=20261113-1"></script>
+    <script defer src="/js/admin.js?v=20261113-1"></script>
 </head>
 
-<body>
+<body class="pagina-admin">
     <header>
         <div><span class="marca">NEXUS<span class="marca-acento">PLAY</span></span>
             <p>Administración de productos y ventas</p>
@@ -23,25 +24,17 @@
             <p>Administra videojuegos, géneros, portadas y pagos desde un solo lugar.</p>
         </section>
         <p id="mensaje" role="status"></p>
-        <section class="config-admin">
-            <div>
-                <h2>Crear categoría</h2>
-                <form id="form-categoria"><label>Nombre de la categoría<input id="nueva-categoria" maxlength="60"
-                            placeholder="Ej. Aventura, deportes o estrategia" required></label><button>Crear categoría</button></form>
-                <div id="lista-categorias" class="lista-categorias" aria-label="Categorías registradas"></div>
-                <p class="ayuda">Puedes eliminar categorías sin productos. General es la categoría predeterminada.</p>
-            </div>
-            <div>
-                <h2>Configurar QR del negocio</h2>
-                <form id="form-qr"><label>Imagen QR bancaria<input id="qr-admin" type="file"
-                            accept="image/png,image/jpeg,image/webp" required></label><img id="qr-previa"
-                        class="vista-previa" alt="QR bancario configurado" hidden>
-                    <p class="ayuda">Este QR se mostrará automáticamente a los compradores. Máximo 1.5 MB.</p><button
-                        id="guardar-qr">Guardar QR</button>
-                </form>
-            </div>
-        </section>
-        <div class="layout admin-layout">
+
+
+
+        <nav class="tabs-admin" role="tablist" aria-label="Secciones de administración">
+            <button type="button" role="tab" id="tab-productos" aria-controls="panel-productos" aria-selected="true" tabindex="0">Productos</button>
+            <button type="button" role="tab" id="tab-categorias" aria-controls="panel-categorias" aria-selected="false" tabindex="-1">Categorías</button>
+            <button type="button" role="tab" id="tab-ventas" aria-controls="panel-ventas" aria-selected="false" tabindex="-1">Ventas</button>
+            <button type="button" role="tab" id="tab-configuracion" aria-controls="panel-configuracion" aria-selected="false" tabindex="-1">Configuración QR</button>
+        </nav>
+        <section id="panel-productos" class="panel-admin" role="tabpanel" aria-labelledby="tab-productos" tabindex="0">
+<div class="layout admin-layout">
             <section>
                 <h2 id="titulo-producto">Agregar videojuego</h2>
                 <form id="registro-admin"><label>Título del videojuego<input id="nombre" maxlength="100"
@@ -69,7 +62,18 @@
                 <div id="productos-admin"></div>
             </section>
         </div>
-        <section class="historial">
+        </section>
+        <section id="panel-categorias" class="panel-admin" role="tabpanel" aria-labelledby="tab-categorias" tabindex="0" hidden>
+<div>
+                <h2>Crear categoría</h2>
+                <form id="form-categoria"><label>Nombre de la categoría<input id="nueva-categoria" maxlength="60"
+                            placeholder="Ej. Aventura, deportes o estrategia" required></label><button>Crear categoría</button></form>
+                <div id="lista-categorias" class="lista-categorias" aria-label="Categorías registradas"></div>
+                <p class="ayuda">Puedes eliminar categorías sin productos. General es la categoría predeterminada.</p>
+            </div>
+        </section>
+        <section id="panel-ventas" class="panel-admin" role="tabpanel" aria-labelledby="tab-ventas" tabindex="0" hidden>
+<section class="historial">
             <div class="titulo">
                 <h2>Historial de ventas</h2><button id="actualizar-ventas" class="secundario">Actualizar</button>
             </div>
@@ -83,7 +87,20 @@
  <div id="resumen-ventas" class="resumen-ventas" role="status"></div><div id="ventas-admin" aria-live="polite"></div>
  <nav class="paginacion-ventas" aria-label="Páginas del historial"><button id="ventas-anterior" class="secundario" disabled>Anterior</button><span id="ventas-pagina">Página 1 de 1</span><button id="ventas-siguiente" class="secundario" disabled>Siguiente</button></nav>
         </section>
-        <section class="historial"><div class="titulo"><h2>Avisos Yape del teléfono</h2><button id="actualizar-yape" class="secundario">Actualizar avisos</button><a class="enlace secundario" href="/api/admin/yape/excel.csv">Descargar para Excel</a><button id="sincronizar-sheets" class="secundario">Sincronizar Google Sheets</button></div><p>Relaciona el aviso con un pedido solo después de comprobar importe, moneda y abono en el banco. Para pagos mixtos, verifica también el efectivo.</p><div id="avisos-yape"></div></section><footer>NexusPlay · Administración de videojuegos</footer>
+<section class="historial"><div class="titulo"><h2>Avisos Yape del teléfono</h2><button id="actualizar-yape" class="secundario">Actualizar avisos</button><a class="enlace secundario" href="/api/admin/yape/excel.csv">Descargar para Excel</a><button id="sincronizar-sheets" class="secundario">Sincronizar Google Sheets</button></div><p>Relaciona el aviso con un pedido solo después de comprobar importe, moneda y abono en el banco. Para pagos mixtos, verifica también el efectivo.</p><div id="avisos-yape"></div></section>
+        </section>
+        <section id="panel-configuracion" class="panel-admin" role="tabpanel" aria-labelledby="tab-configuracion" tabindex="0" hidden>
+<div>
+                <h2>Configurar QR del negocio</h2>
+                <form id="form-qr"><label>Imagen QR bancaria<input id="qr-admin" type="file"
+                            accept="image/png,image/jpeg,image/webp" required></label><img id="qr-previa"
+                        class="vista-previa" alt="QR bancario configurado" hidden>
+                    <p class="ayuda">Este QR se mostrará automáticamente a los compradores. Máximo 1.5 MB.</p><button
+                        id="guardar-qr">Guardar QR</button>
+                </form>
+            </div>
+        </section>
+        <footer>NexusPlay · Administración de videojuegos</footer>
     </main>
 </body>
 

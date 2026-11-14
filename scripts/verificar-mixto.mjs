@@ -1,7 +1,8 @@
 import {spawn} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import pg from 'pg';
 const db=new pg.Pool({connectionString:process.env.DATABASE_URL});let id,venta,qr;
-const child=spawn(process.execPath,['server.js'],{env:{...process.env,PORT:'3003'},stdio:['ignore','pipe','pipe']});
+const child=spawn(process.execPath,[fileURLToPath(new URL('../js/server.js',import.meta.url))],{env:{...process.env,PORT:'3003'},stdio:['ignore','pipe','pipe']});
 async function post(path,data){const r=await fetch('http://localhost:3003/api/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});return {status:r.status,data:await r.json()};}
 try{
  await new Promise((ok,no)=>{const timer=setTimeout(()=>no(Error('No inició')),20000);child.stdout.on('data',d=>{if(d.toString().includes('iniciado')){clearTimeout(timer);ok();}});child.on('exit',()=>{clearTimeout(timer);no(Error('Inicio fallido'));});});

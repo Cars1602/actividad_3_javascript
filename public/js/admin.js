@@ -1,10 +1,54 @@
 $(function () {
     let imagen = '', leyendo = false, editando=null, productosAdmin=[],imagenOriginal='',lecturaImagen=0;
     const dinero = n => 'Bs ' + Number(n).toFixed(2);
-    function mensaje(t, error = false) { $('#mensaje').text(t).toggleClass('error', error).hide().fadeIn(180); }
+    const mensaje = NexusUI.mensaje;
     function api(path, method = 'GET', data) { return $.ajax({ url: '/api/' + path, method, contentType: 'application/json', data: data ? JSON.stringify(data) : undefined }); }
-    function fallo(e) { mensaje(e.responseJSON?.error || 'No se pudo completar la operación.', true); }
-    async function productos() { const datos = await api('productos'); productosAdmin=datos; $('#productos-admin').empty(); if (!datos.length) $('#productos-admin').text('Agrega tu primer videojuego usando el formulario.'); datos.forEach(p => { const fila = $('<article class="producto producto-admin">'); if (p.imagen) fila.append($('<img class="foto-producto">').attr({ src: p.imagen, alt: p.nombre })); const d = $('<div>'); d.append($('<small class="categoria">').text(p.categoria), $('<h3>').text(p.nombre), $('<p>').text(p.descripcion), $('<strong>').text(dinero(p.precio)), $('<p>').text(p.stock + ' disponibles')); fila.append(d,$('<button class="editar-producto secundario" type="button">').attr('data-id',p.id).text('Editar')).hide(); $('#productos-admin').append(fila); fila.fadeIn(180); }); }
+    function fallo(e, formulario) { mensaje(e.responseJSON?.error || 'No se pudo completar la operación.', true, formulario); }
+
+    const pestanas = [...document.querySelectorAll('.tabs-admin [role=tab]')];
+    function activarPestana(elegida, enfocar = false) {
+        pestanas.forEach(pestana => {
+            const activa = pestana === elegida;
+            pestana.setAttribute('aria-selected', String(activa));
+            pestana.tabIndex = activa ? 0 : -1;
+            document.getElementById(pestana.getAttribute('aria-controls')).hidden = !activa;
+        });
+        if (enfocar) elegida.focus();
+    }
+    pestanas.forEach((pestana, indice) => {
+        pestana.addEventListener('click', () => activarPestana(pestana));
+        pestana.addEventListener('keydown', event => {
+            const destinos = { ArrowRight: (indice + 1) % pestanas.length,
+                ArrowLeft: (indice + pestanas.length - 1) % pestanas.length,
+                Home: 0, End: pestanas.length - 1 };
+            if (!(event.key in destinos)) return;
+            event.preventDefault();
+            activarPestana(pestanas[destinos[event.key]], true);
+        });
+    });
+
+    async function productos() {
+        $('#productos-admin').attr('aria-busy', 'true');
+        $('#recargar').prop('disabled', true).text('Actualizando…');
+        try {
+            const datos = await api('productos');
+            productosAdmin = datos;
+            $('#productos-admin').empty();
+            if (!datos.length) $('#productos-admin').text('Agrega tu primer videojuego usando el formulario.');
+            datos.forEach(p => {
+                const fila = $('<article class="producto producto-admin">');
+                if (p.imagen) fila.append($('<img class="foto-producto">').attr({ src: p.imagen, alt: p.nombre }));
+                const d = $('<div>');
+                d.append($('<small class="categoria">').text(p.categoria), $('<h3>').text(p.nombre),
+                    $('<p>').text(p.descripcion), $('<strong>').text(dinero(p.precio)), $('<p>').text(p.stock + ' disponibles'));
+                fila.append(d, $('<button class="editar-producto secundario" type="button">').attr('data-id', p.id).text('Editar'));
+                $('#productos-admin').append(fila);
+            });
+        } finally {
+            $('#productos-admin').attr('aria-busy', 'false');
+            $('#recargar').prop('disabled', false).text('Actualizar');
+        }
+    }
     async function categorias(seleccion) {
         const elegida=seleccion??$('#categoria').val();
         const datos=await api('categorias');
@@ -26,19 +70,19 @@ $(function () {
         try{await api('categorias/'+boton.attr('data-id'),'DELETE');await categorias();mensaje('Categoría «'+nombre+'» eliminada.');}
         catch(e){fallo(e);boton.prop('disabled',false);}
     });
-    $('#form-categoria').on('submit', async function (e) { e.preventDefault(); const b = $(this).find('button'); b.prop('disabled', true); try { const c = await api('categorias', 'POST', { nombre: $('#nueva-categoria').val().trim() }); this.reset(); await categorias(c.nombre); mensaje('Categoría creada. Ya puedes seleccionarla.'); } catch (e) { fallo(e); } finally { b.prop('disabled', false); } });
+    $('#form-categoria').on('submit', async function (e) { e.preventDefault(); const b = $(this).find('button'); b.prop('disabled', true); try { const c = await api('categorias', 'POST', { nombre: $('#nueva-categoria').val().trim() }); this.reset(); await categorias(c.nombre); mensaje('Categoría creada. Ya puedes seleccionarla.', false, this); } catch (e) { fallo(e, this); } finally { b.prop('disabled', false); } });
     let qrImagen = '';
-    $('#qr-admin').on('change', function () { qrImagen = ''; const f = this.files[0]; if (!f) return; if (!['image/png', 'image/jpeg', 'image/webp'].includes(f.type) || f.size > 1500000) { this.value = ''; mensaje('Selecciona un QR PNG, JPG o WebP de hasta 1.5 MB.', true); return; } const lector = new FileReader(); $('#guardar-qr').prop('disabled', true); lector.onload = () => { qrImagen = lector.result; $('#qr-previa').attr('src', qrImagen).prop('hidden', false); $('#guardar-qr').prop('disabled', false); }; lector.onerror = () => { $('#guardar-qr').prop('disabled', false); mensaje('No se pudo leer el QR.', true); }; lector.readAsDataURL(f); });
-    $('#form-qr').on('submit', async function (e) { e.preventDefault(); if (!qrImagen) return mensaje('Selecciona la imagen QR.', true); $('#guardar-qr').prop('disabled', true); try { await api('configuracion/qr', 'PUT', { imagen: qrImagen }); mensaje('QR guardado. Aparecerá al seleccionar QR en la tienda.'); } catch (e) { fallo(e); } finally { $('#guardar-qr').prop('disabled', false); } });
+    $('#qr-admin').on('change', function () { qrImagen = ''; const f = this.files[0]; if (!f) return; if (!['image/png', 'image/jpeg', 'image/webp'].includes(f.type) || f.size > 1500000) { this.value = ''; NexusUI.errorCampo(this, 'Selecciona un QR PNG, JPG o WebP de hasta 1.5 MB.'); return; } const lector = new FileReader(); $('#guardar-qr').prop('disabled', true); lector.onload = () => { qrImagen = lector.result; $('#qr-previa').attr('src', qrImagen).prop('hidden', false); $('#guardar-qr').prop('disabled', false); }; lector.onerror = () => { $('#guardar-qr').prop('disabled', false); mensaje('No se pudo leer el QR.', true, '#form-qr'); }; lector.readAsDataURL(f); });
+    $('#form-qr').on('submit', async function (e) { e.preventDefault(); if (!qrImagen) return mensaje('Selecciona la imagen QR.', true, this); $('#guardar-qr').prop('disabled', true); try { await api('configuracion/qr', 'PUT', { imagen: qrImagen }); mensaje('QR guardado. Aparecerá al seleccionar QR en la tienda.', false, this); } catch (e) { fallo(e, this); } finally { $('#guardar-qr').prop('disabled', false); } });
     async function configuracion() { const c = await api('configuracion'); if (c.qr_imagen) $('#qr-previa').attr('src', c.qr_imagen).prop('hidden', false); }
     function mostrarPrevia(){if(imagen)$('#vista-previa').attr('src',imagen).prop('hidden',false);else $('#vista-previa').removeAttr('src').prop('hidden',true);}
     $('#imagen').on('change',function(){
         const turno=++lecturaImagen,f=this.files[0];imagen=imagenOriginal;leyendo=false;$('#guardar').prop('disabled',false);mostrarPrevia();
         if(!f)return;
-        if(!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>1500000){this.value='';return mensaje('Usa una imagen JPG, PNG o WebP de hasta 1.5 MB.',true);}
+        if(!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>1500000){this.value='';NexusUI.errorCampo(this,'Usa una imagen JPG, PNG o WebP de hasta 1.5 MB.');return;}
         leyendo=true;$('#guardar').prop('disabled',true);const lector=new FileReader();
         lector.onload=()=>{if(turno!==lecturaImagen)return;imagen=lector.result;leyendo=false;$('#guardar').prop('disabled',false);mostrarPrevia();};
-        lector.onerror=()=>{if(turno!==lecturaImagen)return;leyendo=false;$('#guardar').prop('disabled',false);mensaje('No se pudo leer la imagen.',true);};lector.readAsDataURL(f);
+        lector.onerror=()=>{if(turno!==lecturaImagen)return;leyendo=false;$('#guardar').prop('disabled',false);mensaje('No se pudo leer la imagen.',true,'#registro-admin');};lector.readAsDataURL(f);
     });
     $('#registro-admin').on('reset',()=>{lecturaImagen++;imagen='';imagenOriginal='';editando=null;leyendo=false;mostrarPrevia();$('#imagen').prop('required',true);$('#titulo-producto').text('Agregar videojuego');$('#guardar').text('Guardar videojuego').prop('disabled',false);$('#cancelar-edicion').prop('hidden',true);});
     $('#cancelar-edicion').on('click',()=>$('#registro-admin')[0].reset());
@@ -51,10 +95,10 @@ $(function () {
     });
     $('#registro-admin').on('keydown',function(e){if(e.key==='Escape'){this.reset();$('#nombre').trigger('focus');}});
     $('#registro-admin').on('submit',async function(e){
-        e.preventDefault();if(leyendo||(!editando&&!imagen))return mensaje('Selecciona una imagen válida.',true);
+        e.preventDefault();if(leyendo||(!editando&&!imagen))return mensaje('Selecciona una imagen válida.',true,this);
         const id=editando;$('#guardar').prop('disabled',true);
-        try{await api(id?'productos/'+id:'productos',id?'PUT':'POST',{nombre:$('#nombre').val().trim(),descripcion:$('#descripcion').val().trim(),categoria:$('#categoria').val(),precio:Number($('#precio').val()),stock:Number($('#stock').val()),imagen});this.reset();await productos();mensaje(id?'Producto actualizado. Los cambios ya están disponibles en la tienda.':'Videojuego guardado. Ya está disponible en la tienda.');$('#nombre').trigger('focus');}
-        catch(e){fallo(e);}finally{$('#guardar').prop('disabled',false);}
+        try{await api(id?'productos/'+id:'productos',id?'PUT':'POST',{nombre:$('#nombre').val().trim(),descripcion:$('#descripcion').val().trim(),categoria:$('#categoria').val(),precio:Number($('#precio').val()),stock:Number($('#stock').val()),imagen});this.reset();await productos();mensaje(id?'Producto actualizado. Los cambios ya están disponibles en la tienda.':'Videojuego guardado. Ya está disponible en la tienda.',false,this);$('#nombre').trigger('focus');}
+        catch(e){fallo(e,this);}finally{$('#guardar').prop('disabled',false);}
     });
     let paginaVentas=1,paginasVentas=1,solicitudVentas=0,filtrosVentas={};
     const nombresPago={efectivo:'Efectivo',qr:'QR',mixto:'Efectivo + QR'};

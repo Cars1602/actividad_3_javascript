@@ -1,6 +1,6 @@
 import {readFile} from 'node:fs/promises';
 import pg from 'pg';
-const datos=JSON.parse(await readFile(new URL('./datos/productos-ejemplo.json',import.meta.url),'utf8'));
+const datos=JSON.parse(await readFile(new URL('../datos/productos-ejemplo.json',import.meta.url),'utf8'));
 const pool=new pg.Pool({connectionString:process.env.DATABASE_URL,connectionTimeoutMillis:15000});
 try{
  const existentes=new Set((await pool.query('SELECT lower(nombre) AS nombre FROM tienda.productos')).rows.map(p=>p.nombre));

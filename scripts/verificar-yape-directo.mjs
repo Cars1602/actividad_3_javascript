@@ -1,8 +1,9 @@
 import {spawn} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {randomBytes} from 'node:crypto';
 import pg from 'pg';
 const clave=randomBytes(32).toString('hex'),evento='prueba_'+randomBytes(20).toString('hex');
-const hijo=spawn(process.execPath,['server.js'],{env:{...process.env,NODE_ENV:'production',PORT:'3004',ADMIN_PASSWORD:clave,YAPE_API_TOKEN:clave},stdio:['ignore','pipe','pipe']});
+const hijo=spawn(process.execPath,[fileURLToPath(new URL('../js/server.js',import.meta.url))],{env:{...process.env,NODE_ENV:'production',PORT:'3004',ADMIN_PASSWORD:clave,YAPE_API_TOKEN:clave},stdio:['ignore','pipe','pipe']});
 const db=new pg.Pool({connectionString:process.env.DATABASE_URL});
 try{
  await new Promise((ok,no)=>{const timer=setTimeout(()=>no(Error('Inicio agotado')),25000);hijo.stdout.on('data',d=>{if(d.toString().includes('iniciado')){clearTimeout(timer);ok();}});hijo.on('exit',()=>{clearTimeout(timer);no(Error('Inicio falló'));});});

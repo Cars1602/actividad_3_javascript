@@ -4,7 +4,7 @@ const pool=new pg.Pool({connectionString:process.env.DATABASE_URL});
 const ids=[];const ventas=[];
 async function request(path,body){const r=await fetch(base+path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});return {status:r.status,data:await r.json()};}
 try {
- for(const path of ['/','/jquery.min.js','/estilos.css','/app.js']){if(!(await fetch(base+path)).ok)throw Error(path);}
+ for(const path of ['/','/js/vendor/jquery.min.js','/estilos.css','/js/inicio.js']){if(!(await fetch(base+path)).ok)throw Error(path);}
  const p=await request('/api/productos',{nombre:'Prueba de integración',precio:8,stock:5});if(p.status!==201)throw Error('Crear');ids.push(p.data.id);
  const insuf=await request('/api/ventas',{items:[{id:p.data.id,cantidad:2}],metodo:'efectivo',recibido:1});if(insuf.status!==400)throw Error('Efectivo insuficiente');
  const v=await request('/api/ventas',{items:[{id:p.data.id,cantidad:2}],metodo:'efectivo',recibido:20});if(v.status!==201||Number(v.data.total)!==16)throw Error('Venta efectivo');ventas.push(v.data.id);

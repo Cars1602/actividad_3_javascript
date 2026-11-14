@@ -3,7 +3,7 @@
 Hoja elegida: https://docs.google.com/spreadsheets/d/10JvrtW9e_xrDLzKBFEGilIcti8UUPeKjf-iDQjhnRp0/edit
 
 1. En esa hoja abrir Extensiones > Apps Script.
-2. Pegar GoogleSheets.gs y guardar.
+2. Pegar scripts/GoogleSheets.gs y guardar.
 3. Configuración del proyecto > Propiedades del script: crear REGISTRO_TOKEN con una clave privada aleatoria de al menos 32 caracteres, diferente del token Android.
 4. Ejecutar prepararHoja y autorizar el acceso a esa hoja. Crea PagosYape con encabezados si no existe; no reemplaza otras pestañas.
 5. Implementar > Nueva implementación > Aplicación web. Ejecutar como tu cuenta. Para recibir el POST desde Render, el acceso debe permitir llamadas sin inicio de sesión interactivo; el script exige REGISTRO_TOKEN en cada solicitud. Si la universidad no permite esta implementación, no funcionará este método.

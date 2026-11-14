@@ -75,3 +75,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS yape_huella_asociada_idx ON tienda.notificacio
 
 -- Cada venta mantiene su propia sincronización, además de los avisos del teléfono.
 ALTER TABLE tienda.ventas ADD COLUMN IF NOT EXISTS sheets_sincronizado_en TIMESTAMPTZ;
+
+ALTER TABLE tienda.ventas ADD COLUMN IF NOT EXISTS cliente_nombre VARCHAR(150) NOT NULL DEFAULT '';
+ALTER TABLE tienda.ventas ADD COLUMN IF NOT EXISTS cliente_email VARCHAR(254) NOT NULL DEFAULT '';
+ALTER TABLE tienda.ventas ADD COLUMN IF NOT EXISTS correo_enviado_en TIMESTAMPTZ;

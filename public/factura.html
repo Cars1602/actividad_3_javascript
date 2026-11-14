@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Factura de compra · NexusPlay</title>
+    <link rel="stylesheet" href="/factura.css?v=20261113-1">
+    <script src="/js/vendor/jquery.min.js" defer></script>
+    <script src="/js/factura.js?v=20261113-1" defer></script>
+</head>
+<body>
+    <nav class="acciones" aria-label="Acciones de la factura">
+        <a href="/">Volver a la tienda</a>
+        <button id="imprimir" type="button" hidden>Imprimir / Guardar PDF</button>
+    </nav>
+    <main>
+        <p id="estado" role="status">Consultando tu pedido…</p>
+        <button id="reintentar" type="button" hidden>Volver a consultar</button>
+        <article id="factura" hidden aria-labelledby="titulo-factura">
+            <header>
+                <div><p class="marca">NEXUS<span>PLAY</span></p><p>Videojuegos y nuevas aventuras</p></div>
+                <div><p class="etiqueta">Comprobante de compra</p><h1 id="titulo-factura">Factura</h1><p id="numero"></p></div>
+            </header>
+            <section class="datos" aria-label="Datos del pedido">
+                <div><h2>Fecha del pedido</h2><p id="fecha"></p></div>
+                <div><h2>Forma de pago</h2><p id="metodo"></p></div>
+                <div><h2>Estado</h2><p class="pagado">Pago confirmado</p></div>
+            </section>
+            <p id="titular" hidden></p>
+            <div class="tabla-contenedor">
+                <table>
+                    <caption>Detalle de los productos comprados</caption>
+                    <thead><tr><th scope="col">Producto</th><th scope="col">Cant.</th><th scope="col">Precio unitario</th><th scope="col">Subtotal</th></tr></thead>
+                    <tbody id="productos-factura"></tbody>
+                </table>
+            </div>
+            <section class="resumen" aria-label="Resumen del pago">
+                <p><span>Pagado en efectivo</span><strong id="efectivo"></strong></p>
+                <p><span>Pagado por QR</span><strong id="qr"></strong></p>
+                <p id="fila-recibido" hidden><span>Efectivo recibido</span><strong id="recibido"></strong></p>
+                <p id="fila-cambio" hidden><span>Cambio entregado</span><strong id="cambio"></strong></p>
+                <p class="total"><span>Total pagado</span><strong id="total-factura"></strong></p>
+            </section>
+            <footer><p>¡Gracias por tu compra en NexusPlay!</p><small>Comprobante de compra sin validez fiscal. No contiene autorización tributaria.</small></footer>
+        </article>
+    </main>
+</body>
+</html>

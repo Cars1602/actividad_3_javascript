@@ -233,8 +233,8 @@ $(function () {
         $('#seguimiento').prop('hidden',$('[name=metodo]:checked').val()==='qr_demo').toggleClass('pago-confirmado',pagado);
         $('#numero-pedido').text('Pedido #' + v.id);
         $('#importes-pedido').text('Total: ' + dinero(v.total) + ' · Efectivo: ' + dinero(v.monto_efectivo) + ' · QR: ' + dinero(v.monto_qr));
-        $('#estado-pedido').text(pagado ? '¡Pago confirmado! Tu pedido está pagado.' : qrRecibido ? 'Llegó tu pago QR. Falta confirmar la entrega del efectivo.' : 'Esperando el aviso de tu pago QR. La pantalla se actualizará cuando se confirme.');
-        $('#estado-consulta').text(pagado ? 'Confirmación recibida del servidor.' : 'Verificación automática cada 8 segundos. Si ya pagaste, no vuelvas a transferir.');
+        $('#estado-pedido').text(pagado ? '¡Pago confirmado! Tu pedido está pagado.' : v.metodo === 'efectivo' ? 'Esperando que administración confirme el efectivo recibido.' : qrRecibido ? 'Llegó tu pago QR. Falta confirmar la entrega del efectivo.' : 'Esperando el aviso de tu pago QR. La pantalla se actualizará cuando se confirme.');
+        $('#estado-consulta').text(pagado ? (!v.cliente_email ? 'Este pedido no tiene correo registrado; puedes imprimir su factura.' : v.correo_enviado_en ? 'Comprobante entregado a Gmail para su envío.' : v.correo_error || 'Pago confirmado. Comprobante pendiente de envío por correo.') : 'Verificación automática cada 8 segundos. Si ya pagaste, no vuelvas a transferir.');
         $('#verificar-pago').prop('disabled',false).text('Actualizar pago');
         $('#comprobante-confirmado').prop('hidden',!pagado);
         $('#ver-factura').prop('hidden', !pagado || !pedidoToken).attr('href', pagado && pedidoToken ? '/factura.html#' + encodeURIComponent(pedidoToken) : null);
@@ -243,7 +243,7 @@ $(function () {
         $('#aviso-pago-titulo').text(pagado ? '✓ Pago confirmado' : 'QR recibido · Efectivo pendiente');
         $('#aviso-pago-detalle').text('Pedido #' + v.id + ' · ' + (pagado ? dinero(v.total) + ' pagados.' : dinero(v.monto_qr) + ' recibidos por QR.'));
         clearTimeout(temporizadorPago);
-        if (!pagado) temporizadorPago = setTimeout(() => consultarPago(),8000);
+        if (!pagado || (v.cliente_email && !v.correo_enviado_en)) temporizadorPago = setTimeout(() => consultarPago(),8000);
     }
     $('#verificar-pago').on('click',() => consultarPago(true));
     $('#pago').on('submit', async function (e) {

@@ -167,7 +167,7 @@ app.put('/api/productos/:id', async (req, res, next) => {
 app.get('/api/pedidos/:token', async (req, res, next) => {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(req.params.token)) return res.status(400).json({ error: 'Clave de pedido inválida.' });
     res.set('Cache-Control', 'no-store');
-    try { const r = await pool.query('SELECT id,total,metodo,estado,monto_efectivo,monto_qr,qr_verificado,detalle,creado_en,recibido,nombre_pagador FROM tienda.ventas WHERE consulta_token=$1', [req.params.token]); if (!r.rowCount) return res.status(404).json({ error: 'Pedido no encontrado.' }); res.json({ ...r.rows[0], verificacion_excel: 'reemplazada_por_neon' }); } catch (e) { next(e); }
+    try { const r = await pool.query('SELECT id,total,metodo,estado,monto_efectivo,monto_qr,qr_verificado,detalle,creado_en,recibido,nombre_pagador,correo_enviado_en,correo_error,cliente_email FROM tienda.ventas WHERE consulta_token=$1', [req.params.token]); if (!r.rowCount) return res.status(404).json({ error: 'Pedido no encontrado.' }); res.json({ ...r.rows[0], verificacion_excel: 'reemplazada_por_neon' }); } catch (e) { next(e); }
 });
 app.get('/api/admin/ventas/historial', async (req, res, next) => {
     const { estado = '', metodo = '', desde = '', hasta = '' } = req.query;
@@ -186,7 +186,7 @@ app.get('/api/admin/ventas/historial', async (req, res, next) => {
         c = await pool.connect(); await c.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
         const resumen = (await c.query(`SELECT count(*)::integer AS cantidad,count(*) FILTER(WHERE estado='pagado')::integer AS pagadas,count(*) FILTER(WHERE estado='pendiente')::integer AS pendientes,COALESCE(sum(total) FILTER(WHERE estado='pagado'),0) AS total_pagado,COALESCE(sum(total) FILTER(WHERE estado='pendiente'),0) AS total_pendiente FROM tienda.ventas${where}`, valores)).rows[0];
         const paginas = Math.max(1, Math.ceil(resumen.cantidad / 20)), actual = Math.min(pagina, paginas);
-        const ventas = (await c.query(`SELECT id,metodo,total,recibido,estado,detalle,creado_en,monto_efectivo,monto_qr,nombre_pagador,qr_verificado FROM tienda.ventas${where} ORDER BY creado_en DESC,id DESC LIMIT 20 OFFSET $${valores.length + 1}`, [...valores, (actual - 1) * 20])).rows;
+        const ventas = (await c.query(`SELECT id,metodo,total,recibido,estado,detalle,creado_en,monto_efectivo,monto_qr,nombre_pagador,qr_verificado,cliente_nombre,cliente_email,correo_enviado_en,correo_error FROM tienda.ventas${where} ORDER BY creado_en DESC,id DESC LIMIT 20 OFFSET $${valores.length + 1}`, [...valores, (actual - 1) * 20])).rows;
         await c.query('COMMIT'); res.json({ ventas, resumen, pagina: actual, paginas });
     } catch (e) { if (c) await c.query('ROLLBACK'); next(e); } finally { c?.release(); }
 });
@@ -217,14 +217,14 @@ app.post('/api/ventas', async (req, res, next) => {
         const saldoQr = (centavos - Math.round(efectivo * 100)) / 100;
         for (const i of items) await c.query('UPDATE tienda.productos SET stock=stock-$1 WHERE id=$2', [i.cantidad, i.id]);
         await c.query('SELECT pg_advisory_xact_lock(853002)');
-        const venta = (await c.query('INSERT INTO tienda.ventas(metodo,total,recibido,estado,detalle,monto_efectivo,monto_qr,nombre_pagador,nombre_pagador_clave) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *', [metodo, total, metodo !== 'qr' ? recibido : null, metodo === 'efectivo' ? 'pagado' : 'pendiente', JSON.stringify(detalle), efectivo, saldoQr, metodo === 'efectivo' ? '' : nombre_pagador.trim(), metodo === 'efectivo' ? '' : normalizarNombre(nombre_pagador)])).rows[0];
+        const venta = (await c.query('INSERT INTO tienda.ventas(metodo,total,recibido,estado,detalle,monto_efectivo,monto_qr,nombre_pagador,nombre_pagador_clave) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *', [metodo, total, metodo !== 'qr' ? recibido : null, 'pendiente', JSON.stringify(detalle), efectivo, saldoQr, metodo === 'efectivo' ? '' : nombre_pagador.trim(), metodo === 'efectivo' ? '' : normalizarNombre(nombre_pagador)])).rows[0];
         await c.query('UPDATE tienda.ventas SET cliente_nombre=$1,cliente_email=$2 WHERE id=$3', [cliente_nombre.trim(),cliente_email.trim(),venta.id]);
         await c.query('COMMIT'); res.status(201).json(venta);
     } catch (e) { if (c) await c.query('ROLLBACK'); if (e instanceof Error && ['Existencias', 'Total', 'El efectivo'].some(x => e.message.startsWith(x))) res.status(400).json({ error: e.message }); else next(e); } finally { c?.release(); }
 });
 app.post('/api/ventas/:id/confirmar', async (req, res, next) => {
     if (!/^\d+$/.test(req.params.id)) return res.sendStatus(400);
-    try { const r = await pool.query("UPDATE tienda.ventas SET estado='pagado',sheets_sincronizado_en=NULL WHERE id=$1 AND metodo IN ('qr','mixto') AND estado='pendiente' RETURNING *", [req.params.id]); if (!r.rowCount) return res.status(404).json({ error: 'Venta pendiente no encontrada.' }); res.json(r.rows[0]); } catch (e) { next(e); }
+    try { const r = await pool.query("UPDATE tienda.ventas SET estado='pagado',sheets_sincronizado_en=NULL WHERE id=$1 AND estado='pendiente' RETURNING *", [req.params.id]); if (!r.rowCount) return res.status(404).json({ error: 'Venta pendiente no encontrada.' }); res.json(r.rows[0]); } catch (e) { next(e); }
 });
 setInterval(() => enviarConfirmaciones(pool).catch(() => console.error('Correo pendiente de reintento.')), 15000).unref();
 app.use((err, req, res, next) => { console.error('Error de servicio:', err.code || 'desconocido'); res.status(503).json({ error: 'No se pudo completar la operación. Revisa la conexión con PostgreSQL.' }); });

@@ -44,7 +44,7 @@ export async function enviarConfirmaciones(pool) {
                 method:'POST', signal:AbortSignal.timeout(20000),
                 body:new URLSearchParams({client_id:process.env.GOOGLE_CLIENT_ID, client_secret:process.env.GOOGLE_CLIENT_SECRET, refresh_token:process.env.GOOGLE_REFRESH_TOKEN, grant_type:'refresh_token'})
             });
-            if (!respuesta.ok) throw new Error('No se pudo autorizar Gmail API.');
+            if (!respuesta.ok) { await conexion.query("UPDATE tienda.ventas SET correo_error='Autorización de Google rechazada; revisar credenciales' WHERE estado='pagado' AND cliente_email<>'' AND correo_enviado_en IS NULL"); throw new Error('No se pudo autorizar Gmail API.'); }
             const autorizacion = await respuesta.json();
             const {rows} = await conexion.query("SELECT * FROM tienda.ventas WHERE estado='pagado' AND cliente_email<>'' AND correo_enviado_en IS NULL ORDER BY id LIMIT 10");
             for (const venta of rows) {
@@ -62,8 +62,8 @@ export async function enviarConfirmaciones(pool) {
                         body:JSON.stringify({raw:mensaje.message.toString('base64url')})
                     });
                     if (!envio.ok) throw new Error('Gmail no aceptó el mensaje.');
-                    await conexion.query('UPDATE tienda.ventas SET correo_enviado_en=now() WHERE id=$1', [venta.id]);
-                } catch { console.error('No se pudo enviar el comprobante del pedido #' + venta.id); }
+                    await conexion.query("UPDATE tienda.ventas SET correo_enviado_en=now(),correo_error='' WHERE id=$1", [venta.id]);
+                } catch { await conexion.query("UPDATE tienda.ventas SET correo_error='No se pudo entregar el PDF a Gmail; revisar Logs de Render' WHERE id=$1",[venta.id]); console.error('No se pudo enviar el comprobante del pedido #' + venta.id); }
             }
         } finally { await conexion.query('SELECT pg_advisory_unlock(853003)'); }
     } finally { conexion?.release(); trabajando = false; }

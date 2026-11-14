@@ -29,13 +29,15 @@ $(function () {
             if (!Number.isFinite(fecha.getTime())) throw new Error('No se pudo consultar la fecha del pedido.');
             const metodos = { efectivo: 'Efectivo', qr: 'QR', mixto: 'Efectivo + QR' };
             $('#numero').text('Pedido #' + pedido.id);
-            document.title = 'Factura pedido #' + pedido.id + ' · NexusPlay';
+            document.title = 'Pago confirmado · Pedido #' + pedido.id + ' · NexusPlay';
             $('#fecha').text(fecha.toLocaleString('es-BO', { timeZone: 'America/La_Paz' }) + ' (Bolivia)');
             $('#metodo').text(metodos[pedido.metodo] || pedido.metodo);
             $('#titular').prop('hidden', !pedido.nombre_pagador).text('Titular del pago QR: ' + (pedido.nombre_pagador || ''));
             const filas = detalle.map(item => {
                 const fila = $('<tr>');
-                $('<td>').text(item.nombre).appendTo(fila);
+                const producto = $('<td>').appendTo(fila);
+                if (typeof item.imagen === 'string' && /^(https:\/\/|data:image\/(png|jpeg|webp);base64,)/i.test(item.imagen)) $('<img>').attr({src:item.imagen,alt:item.nombre}).addClass('portada-compra').appendTo(producto);
+                $('<strong>').text(item.nombre).appendTo(producto);
                 $('<td>').text(item.cantidad).appendTo(fila);
                 $('<td>').text(dinero(item.precio)).appendTo(fila);
                 const subtotal = Math.round(Number(item.precio) * 100) * Number(item.cantidad) / 100;

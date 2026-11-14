@@ -1,28 +1,67 @@
 
+// Solo descarga portadas de proveedores conocidos; nunca URLs arbitrarias desde el servidor.
+async function portadaPDF(origen) {
+    if (typeof origen !== 'string') return null;
+    if (/^data:image\/(png|jpeg);base64,/i.test(origen)) {
+        const datos = Buffer.from(origen.split(',')[1], 'base64');
+        return datos.length <= 2000000 ? datos : null;
+    }
+    try {
+        const url = new URL(origen);
+        if (url.protocol !== 'https:' || !['shared.fastly.steamstatic.com','cdn.akamai.steamstatic.com','cdn.cloudflare.steamstatic.com'].includes(url.hostname)) return null;
+        const respuesta = await fetch(url, {signal:AbortSignal.timeout(8000), redirect:'error'});
+        if (!respuesta.ok || !/^image\/(png|jpeg)/i.test(respuesta.headers.get('content-type') || '')) return null;
+        const partes = []; let longitud = 0;
+        for await (const parte of respuesta.body) {
+            longitud += parte.length;
+            if (longitud > 2000000) { await respuesta.body.cancel().catch(()=>{}); return null; }
+            partes.push(Buffer.from(parte));
+        }
+        return Buffer.concat(partes);
+    } catch { return null; }
+}
+
 export async function crearPDF(venta) {
     const { default: PDFDocument } = await import('pdfkit');
+    const detalle = typeof venta.detalle === 'string' ? JSON.parse(venta.detalle) : venta.detalle;
+    const portadas = [];
+    for (const item of detalle) portadas.push(await portadaPDF(item.imagen));
     return new Promise((resolve, reject) => {
-        const doc = new PDFDocument({ margin: 48 });
+        const doc = new PDFDocument({size:[420,700], margin:28, info:{Title:'Pago confirmado',Author:'NexusPlay'}});
         const partes = [];
         doc.on('data', parte => partes.push(parte));
         doc.on('end', () => resolve(Buffer.concat(partes)));
         doc.on('error', reject);
         const dinero = valor => 'Bs ' + Number(valor).toFixed(2);
-        doc.fontSize(24).text('NexusPlay');
-        doc.fontSize(17).text('Confirmación de pago');
-        doc.moveDown().fontSize(11).text('Pedido #' + venta.id);
-        doc.text('Comprador: ' + venta.cliente_nombre);
-        doc.text('Fecha del pedido: ' + new Date(venta.creado_en).toLocaleString('es-BO', { timeZone: 'America/La_Paz' }));
-        doc.text('Forma de pago: ' + ({efectivo:'Efectivo',qr:'QR',mixto:'Efectivo + QR'}[venta.metodo] || venta.metodo));
-        doc.moveDown().text('Productos comprados:');
-        const detalle = typeof venta.detalle === 'string' ? JSON.parse(venta.detalle) : venta.detalle;
-        for (const item of detalle) {
-            doc.moveDown(.5).text(item.nombre);
-            doc.text(item.cantidad + ' x ' + dinero(item.precio) + ' = ' + dinero(Math.round(Number(item.precio) * 100) * item.cantidad / 100));
-        }
-        doc.moveDown().fontSize(16).text('Total pagado: ' + dinero(venta.total));
-        doc.moveDown().fontSize(10).text('Pago confirmado. Gracias por tu compra.');
-        doc.text('Comprobante de compra sin validez fiscal.');
+        const cabecera = () => {
+            doc.rect(0,0,420,135).fill('#101722');
+            doc.fillColor('#b5ff47').font('Helvetica-Bold').fontSize(17).text('NEXUSPLAY',28,25);
+            doc.fillColor('#ffffff').fontSize(30).text('Pago confirmado',28,59);
+            doc.font('Helvetica').fontSize(11).fillColor('#c5d0df').text('Pedido #' + venta.id,28,105);
+        };
+        cabecera();
+        doc.fillColor('#526078').fontSize(10).text('COMPRADOR',28,157);
+        doc.fillColor('#172133').font('Helvetica-Bold').fontSize(14).text(venta.cliente_nombre,28,174,{width:364});
+        doc.font('Helvetica').fontSize(10).fillColor('#526078').text(new Date(venta.creado_en).toLocaleString('es-BO',{timeZone:'America/La_Paz'})+' (Bolivia)',28,213);
+        doc.text('Pago: '+({efectivo:'Efectivo',qr:'QR',mixto:'Efectivo + QR'}[venta.metodo]||venta.metodo),28,230);
+        let y=266;
+        detalle.forEach((item,indice) => {
+            if (y+160>590) {doc.addPage();cabecera();y=157;}
+            doc.roundedRect(28,y,364,142,10).fill('#edf1f6');
+            if (portadas[indice]) {
+                try {doc.image(portadas[indice],40,y+12,{fit:[154,91],align:'center',valign:'center'});} catch {doc.fillColor('#526078').fontSize(12).text('NEXUSPLAY',40,y+45);}
+            } else {doc.fillColor('#526078').fontSize(12).text('NEXUSPLAY',40,y+45);}
+            doc.fillColor('#172133').font('Helvetica-Bold').fontSize(15).text(item.nombre,207,y+14,{width:170,height:52,ellipsis:true});
+            doc.font('Helvetica').fontSize(11).text(item.cantidad+' x '+dinero(item.precio),207,y+77,{width:170});
+            doc.font('Helvetica-Bold').fontSize(15).text(dinero(Math.round(Number(item.precio)*100)*item.cantidad/100),40,y+113);
+            y+=156;
+        });
+        if(y+104>660){doc.addPage();cabecera();y=157;}
+        doc.roundedRect(28,y,364,62,8).fill('#dcf4c6');
+        doc.fillColor('#172133').font('Helvetica').fontSize(12).text('TOTAL PAGADO',42,y+12);
+        doc.font('Helvetica-Bold').fontSize(25).text(dinero(venta.total),42,y+29);
+        doc.font('Helvetica').fontSize(10).fillColor('#526078').text('Gracias por tu compra. Disfruta tu próxima aventura.',28,y+77,{width:364});
+        doc.fontSize(8).text('Comprobante de compra sin validez fiscal.',28,y+94);
         doc.end();
     });
 }
@@ -51,7 +90,7 @@ export async function enviarConfirmaciones(pool) {
                 try {
                     const mensaje = await transporte.sendMail({
                         from: process.env.GMAIL_FROM, to: venta.cliente_email,
-                        subject: 'NexusPlay: pago confirmado del pedido #' + venta.id,
+                        subject: 'Pago confirmado',
                         messageId: '<nexusplay-pedido-' + venta.consulta_token + '@nexusplay.local>',
                         text: 'Hola ' + venta.cliente_nombre + ', tu pago fue confirmado. Adjuntamos el comprobante de los videojuegos comprados. Gracias por tu compra.',
                         attachments: [{filename: 'NexusPlay-pedido-' + venta.id + '.pdf', content: await crearPDF(venta), contentType:'application/pdf'}]

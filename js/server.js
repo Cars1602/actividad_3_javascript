@@ -208,7 +208,7 @@ app.post('/api/ventas', async (req, res, next) => {
             if (!p || p.stock < i.cantidad) throw new Error('Existencias insuficientes. Actualiza el catálogo.');
             centavos += Math.round(Number(p.precio) * 100) * i.cantidad;
             if (!Number.isSafeInteger(centavos) || centavos > 99999999999999) throw new Error('Total demasiado alto.');
-            detalle.push({ id: p.id, nombre: p.nombre, precio: p.precio, cantidad: i.cantidad });
+            detalle.push({ id: p.id, nombre: p.nombre, precio: p.precio, cantidad: i.cantidad, imagen: p.imagen });
         }
         const total = centavos / 100;
         if (metodo === 'efectivo' && (!Number.isFinite(recibido) || recibido < total || recibido > 999999999999 || Math.abs(recibido * 100 - Math.round(recibido * 100)) > .001)) throw new Error('El efectivo debe cubrir el total y admitir máximo dos decimales.');

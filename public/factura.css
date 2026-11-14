@@ -52,3 +52,22 @@ footer small { font-size: 11px; }
     tr, .resumen, footer { break-inside: avoid; }
     thead { display: table-header-group; }
 }
+
+/* La vista web ocupa el ancho disponible; impresión mantiene márgenes de papel. */
+.acciones, main { max-width: 1440px; width: 100%; }
+article { min-height: calc(100vh - 130px); }
+.portada-compra { display:block; width:220px; max-width:100%; aspect-ratio:16/10; object-fit:cover; border-radius:8px; margin-bottom:12px; }
+header h1 { color:#28580f; }
+@media(max-width:600px) {
+ .tabla-contenedor { overflow:visible; }
+ table, tbody, tr, td {display:block; width:100%;}
+ thead {display:none;}
+ tbody tr {border:1px solid #dfe4ea; border-radius:12px; padding:12px; margin-bottom:16px;}
+ td {border:0; text-align:left; padding:6px 0;}
+ td:nth-child(2)::before {content:'Cantidad: ';}
+ td:nth-child(3)::before {content:'Precio unitario: ';}
+ td:nth-child(4)::before {content:'Subtotal: ';}
+ .portada-compra {width:100%;}
+ .resumen {max-width:none;}
+}
+@media print {article {min-height:0;} .portada-compra {width:120px;} }

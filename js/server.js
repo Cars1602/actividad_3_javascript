@@ -217,7 +217,7 @@ app.post('/api/ventas', async (req, res, next) => {
         const saldoQr = (centavos - Math.round(efectivo * 100)) / 100;
         for (const i of items) await c.query('UPDATE tienda.productos SET stock=stock-$1 WHERE id=$2', [i.cantidad, i.id]);
         await c.query('SELECT pg_advisory_xact_lock(853002)');
-        const venta = (await c.query('INSERT INTO tienda.ventas(metodo,total,recibido,estado,detalle,monto_efectivo,monto_qr,nombre_pagador,nombre_pagador_clave) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *', [metodo, total, metodo !== 'qr' ? recibido : null, 'pendiente', JSON.stringify(detalle), efectivo, saldoQr, metodo === 'efectivo' ? '' : nombre_pagador.trim(), metodo === 'efectivo' ? '' : normalizarNombre(nombre_pagador)])).rows[0];
+        const venta = (await c.query('INSERT INTO tienda.ventas(metodo,total,recibido,estado,detalle,monto_efectivo,monto_qr,nombre_pagador,nombre_pagador_clave) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *', [metodo, total, metodo !== 'qr' ? recibido : null, metodo === 'efectivo' ? 'pagado' : 'pendiente', JSON.stringify(detalle), efectivo, saldoQr, metodo === 'efectivo' ? '' : nombre_pagador.trim(), metodo === 'efectivo' ? '' : normalizarNombre(nombre_pagador)])).rows[0];
         await c.query('UPDATE tienda.ventas SET cliente_nombre=$1,cliente_email=$2 WHERE id=$3', [cliente_nombre.trim(),cliente_email.trim(),venta.id]);
         await c.query('COMMIT'); res.status(201).json(venta);
     } catch (e) { if (c) await c.query('ROLLBACK'); if (e instanceof Error && ['Existencias', 'Total', 'El efectivo'].some(x => e.message.startsWith(x))) res.status(400).json({ error: e.message }); else next(e); } finally { c?.release(); }

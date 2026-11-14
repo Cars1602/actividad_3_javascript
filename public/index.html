@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="estilos.css?v=20261113-5">
     <script defer src="/js/vendor/jquery.min.js"></script>
     <script defer src="/js/interfaz.js?v=20261113-1"></script>
-    <script defer src="/js/inicio.js?v=20261113-5"></script>
+    <script defer src="/js/inicio.js?v=20261113-6"></script>
 </head>
 
 <body class="pagina-tienda">
@@ -27,29 +27,7 @@
         <section id="aviso-pago" class="aviso-pago" role="status" aria-live="polite" hidden>
             <h2 id="aviso-pago-titulo"></h2><p id="aviso-pago-detalle"></p>
         </section>
-                <section id="seguimiento" hidden aria-live="polite">
-                    <h3 id="numero-pedido"></h3>
-                    <ol id="progreso-pago" class="progreso-pago" aria-label="Progreso del pago">
-                        <li data-paso="registrado"><span aria-hidden="true">1</span>Pedido registrado</li>
-                        <li data-paso="esperando"><span aria-hidden="true">2</span>Esperando pago</li>
-                        <li data-paso="confirmado"><span aria-hidden="true">3</span>Pago confirmado</li>
-                    </ol>
-                    <p id="importes-pedido"></p>
-                    <p id="estado-pedido"></p>
-                    <p id="estado-consulta" class="ayuda"></p>
-                    <div id="comprobante-confirmado" class="comprobante-confirmado" hidden>
-                        <svg class="check-pago" viewBox="0 0 120 120" role="img" aria-label="Pago confirmado">
-                            <defs><linearGradient id="verde-check" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b7f870"/><stop offset="1" stop-color="#219b31"/></linearGradient></defs>
-                            <circle cx="60" cy="60" r="53" fill="#eefde9" stroke="url(#verde-check)" stroke-width="8"/>
-                            <path d="M30 60 51 81 91 39" fill="none" stroke="url(#verde-check)" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <h3>¡Pago recibido!</h3><p id="detalle-confirmacion"></p>
-                        <p>Tu compra quedó registrada como pagada.</p>
-                        <a id="ver-factura" class="principal enlace-factura" target="_blank" rel="noopener noreferrer" hidden>Ver e imprimir factura</a>
-                    </div>
-                    <button type="button" id="verificar-pago" class="principal">Actualizar pago</button>
-                    <p class="ayuda">El estado se actualiza automáticamente. No vuelvas a pagar si ya transferiste. Conserva tu comprobante para cualquier revisión.</p>
-                </section>
+
         <div class="layout">
             <section class="seccion-catalogo" aria-label="Catálogo de videojuegos">
                 <div class="titulo">
@@ -118,6 +96,29 @@
             </aside>
         </div>
 
+                <section id="seguimiento" hidden aria-live="polite">
+                    <h3 id="numero-pedido"></h3>
+                    <ol id="progreso-pago" class="progreso-pago" aria-label="Progreso del pago">
+                        <li data-paso="registrado"><span aria-hidden="true">1</span>Pedido registrado</li>
+                        <li data-paso="esperando"><span aria-hidden="true">2</span>Esperando pago</li>
+                        <li data-paso="confirmado"><span aria-hidden="true">3</span>Pago confirmado</li>
+                    </ol>
+                    <p id="importes-pedido"></p>
+                    <p id="estado-pedido"></p>
+                    <p id="estado-consulta" class="ayuda"></p>
+                    <div id="comprobante-confirmado" class="comprobante-confirmado" hidden>
+                        <svg class="check-pago" viewBox="0 0 120 120" role="img" aria-label="Pago confirmado">
+                            <defs><linearGradient id="verde-check" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b7f870"/><stop offset="1" stop-color="#219b31"/></linearGradient></defs>
+                            <circle cx="60" cy="60" r="53" fill="#eefde9" stroke="url(#verde-check)" stroke-width="8"/>
+                            <path d="M30 60 51 81 91 39" fill="none" stroke="url(#verde-check)" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <h3>¡Pago recibido!</h3><p id="detalle-confirmacion"></p>
+                        <p>Tu compra quedó registrada como pagada.</p>
+                        <a id="ver-factura" class="principal enlace-factura" target="_blank" rel="noopener noreferrer" hidden>Ver e imprimir factura</a>
+                    </div>
+                    <button type="button" id="verificar-pago" class="principal">Actualizar pago</button>
+                    <p class="ayuda">El estado se actualiza automáticamente. No vuelvas a pagar si ya transferiste. Conserva tu comprobante para cualquier revisión.</p>
+                </section>
         <footer>NexusPlay · Videojuegos y nuevas aventuras</footer>
     </main>
     <button type="button" id="abrir-carrito" class="barra-carrito" aria-haspopup="dialog" aria-controls="carrito-movil">
